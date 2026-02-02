@@ -19,6 +19,8 @@ import {
 import TransferForm from "@/components/TransferForm";
 import TransferDetailsModal from "@/components/TransferDetailsModal";
 
+export const dynamic = 'force-dynamic';
+
 export default function Dashboard() {
     const [role, setRole] = useState<string | null>(null);
     const [transfers, setTransfers] = useState<TransferJoined[]>([]);
