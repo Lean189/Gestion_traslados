@@ -1,65 +1,112 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import {
+  ClipboardList,
+  Truck,
+  Stethoscope,
+  ChevronRight,
+  Lock
+} from "lucide-react";
+
+export default function LoginPage() {
+  const [password, setPassword] = useState("");
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [error, setError] = useState("");
+
+  const roles = [
+    { id: "sector", name: "Solicitante (Enfermería/Pisos)", icon: Stethoscope, color: "text-blue-500", bg: "bg-blue-50" },
+    { id: "camillero", name: "Camillero / Traslado", icon: Truck, color: "text-emerald-500", bg: "bg-emerald-50" },
+    { id: "imagenes", name: "Sector Imágenes", icon: ClipboardList, color: "text-purple-500", bg: "bg-purple-50" },
+    { id: "admin", name: "Administración / Control", icon: Lock, color: "text-red-500", bg: "bg-red-50" },
+  ];
+
+  const handleLogin = () => {
+    // Para el test usamos contraseñas simples fijas
+    const simplePasswords: Record<string, string> = {
+      sector: "enfermeria123",
+      camillero: "camillero123",
+      imagenes: "imagenes123",
+      admin: "admin123"
+    };
+
+    if (selectedRole && password === simplePasswords[selectedRole]) {
+      localStorage.setItem("userRole", selectedRole);
+      window.location.href = "/dashboard";
+    } else {
+      setError("Contraseña incorrecta para el rol seleccionado.");
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#f8fafc]">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600 text-white shadow-xl shadow-blue-500/20 mb-4">
+            <Truck size={32} />
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900">Gestión de Traslados</h1>
+          <p className="text-slate-500 mt-2 text-lg italic">Sanatorio San José</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="bg-white rounded-3xl p-8 card-shadow border border-slate-100">
+          {!selectedRole ? (
+            <div className="space-y-4">
+              <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Selecciona tu función:</p>
+              {roles.map((role) => (
+                <button
+                  key={role.id}
+                  onClick={() => setSelectedRole(role.id)}
+                  className="w-full flex items-center justify-between p-4 rounded-2xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 transition-all group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-xl ${role.bg} ${role.color}`}>
+                      <role.icon size={24} />
+                    </div>
+                    <span className="font-semibold text-slate-900">{role.name}</span>
+                  </div>
+                  <ChevronRight size={20} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <button
+                onClick={() => setSelectedRole(null)}
+                className="text-sm text-blue-600 font-medium hover:underline flex items-center gap-1"
+              >
+                ← Cambiar rol
+              </button>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Contraseña de {roles.find(r => r.id === selectedRole)?.name}
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Introduce la clave de prueba"
+                    className="input-field pl-12 text-slate-950 font-medium"
+                    onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                  />
+                </div>
+                {error && <p className="text-red-500 text-xs mt-2 font-medium">{error}</p>}
+              </div>
+
+              <button onClick={handleLogin} className="btn-primary w-full py-4 text-lg">
+                Ingresar al Sistema
+              </button>
+
+              <p className="text-center text-xs text-slate-400 leading-relaxed">
+                Uso interno exclusivo para el personal autorizado del sanatorio.
+              </p>
+            </div>
+          )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }
