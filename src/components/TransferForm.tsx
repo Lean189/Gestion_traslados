@@ -1,34 +1,43 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { supabase, Sector, TransferType } from "@/lib/supabase";
+import { useState, useEffect, useCallback } from "react";
+import { supabase, Sector, TransferType, TransferJoined } from "@/lib/supabase";
 import { X, Send, AlertCircle } from "lucide-react";
 
-export default function TransferForm({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {
+export default function TransferForm({
+    onClose,
+    onSuccess,
+    editData
+}: {
+    onClose: () => void,
+    onSuccess: () => void,
+    editData?: TransferJoined | null
+}) {
     const [sectors, setSectors] = useState<Sector[]>([]);
     const [types, setTypes] = useState<TransferType[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
     const [formData, setFormData] = useState({
-        patient_name: "",
-        patient_history_number: "",
-        origin_sector_id: "",
-        destination_sector_id: "",
-        transfer_type_id: "",
-        priority: "MEDIA",
-        observation: ""
+        patient_name: editData?.patient_name || "",
+        patient_history_number: editData?.patient_history_number || "",
+        origin_sector_id: editData?.origin_sector_id || "",
+        destination_sector_id: editData?.destination_sector_id || "",
+        transfer_type_id: editData?.transfer_type_id || "",
+        priority: editData?.priority || "MEDIA",
+        observation: editData?.observation || ""
     });
 
+    const fetchData = useCallback(async () => {
+        const { data: sectorsData } = await supabase.from('sectors').select('id, name').order('name');
+        const { data: typesData } = await supabase.from('transfer_types').select('id, name').order('name');
+        setSectors(sectorsData as Sector[] || []);
+        setTypes(typesData as TransferType[] || []);
+    }, [supabase]);
+
     useEffect(() => {
-        const fetchData = async () => {
-            const { data: sectorsData } = await supabase.from('sectors').select('id, name').order('name');
-            const { data: typesData } = await supabase.from('transfer_types').select('id, name').order('name');
-            setSectors(sectorsData as Sector[] || []);
-            setTypes(typesData as TransferType[] || []);
-        };
         fetchData();
-    }, []);
+    }, [fetchData]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -46,15 +55,29 @@ export default function TransferForm({ onClose, onSuccess }: { onClose: () => vo
             patient_history_number: formData.patient_history_number || null
         };
 
-        const { error: dbError } = await supabase
-            .from('transfers')
-            .insert([dataToInsert]);
+        if (editData?.id) {
+            const { error: dbError } = await supabase
+                .from('transfers')
+                .update(dataToInsert)
+                .eq('id', editData.id);
 
-        if (!dbError) {
-            onSuccess();
-            onClose();
+            if (!dbError) {
+                onSuccess();
+                onClose();
+            } else {
+                setError("Error al actualizar la solicitud: " + dbError.message);
+            }
         } else {
-            setError("Error al crear la solicitud: " + dbError.message);
+            const { error: dbError } = await supabase
+                .from('transfers')
+                .insert([dataToInsert]);
+
+            if (!dbError) {
+                onSuccess();
+                onClose();
+            } else {
+                setError("Error al crear la solicitud: " + dbError.message);
+            }
         }
         setLoading(false);
     };
@@ -64,8 +87,12 @@ export default function TransferForm({ onClose, onSuccess }: { onClose: () => vo
             <div className="bg-white w-full sm:max-w-lg h-[95vh] sm:h-auto rounded-t-[2.5rem] sm:rounded-[2rem] shadow-2xl overflow-hidden border border-white/20 animate-in fade-in slide-in-from-bottom-10 sm:zoom-in duration-300">
                 <div className="p-6 sm:p-8 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
                     <div>
-                        <h2 className="text-xl sm:text-2xl font-bold text-slate-800">Nueva solicitud</h2>
-                        <p className="text-xs sm:text-sm text-slate-500 font-medium">Completa los datos del paciente</p>
+                        <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
+                            {editData ? "Editar solicitud" : "Nueva solicitud"}
+                        </h2>
+                        <p className="text-xs sm:text-sm text-slate-500 font-medium">
+                            {editData ? "Modifica los datos del traslado" : "Completa los datos del paciente"}
+                        </p>
                     </div>
                     <button onClick={onClose} className="p-2 sm:p-3 rounded-2xl hover:bg-slate-100 text-slate-400 transition-all">
                         <X size={24} />
@@ -150,7 +177,7 @@ export default function TransferForm({ onClose, onSuccess }: { onClose: () => vo
                             <select
                                 className="input-field"
                                 value={formData.priority}
-                                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                                onChange={(e) => setFormData({ ...formData, priority: e.target.value as 'BAJA' | 'MEDIA' | 'ALTA' | 'URGENTE' })}
                             >
                                 <option value="BAJA">Baja</option>
                                 <option value="MEDIA">Media</option>
@@ -176,9 +203,9 @@ export default function TransferForm({ onClose, onSuccess }: { onClose: () => vo
                             type="submit"
                             className="btn-primary w-full py-5 flex items-center justify-center gap-3 text-lg rounded-2xl shadow-blue-500/25"
                         >
-                            {loading ? "Creando solicitud..." : (
+                            {loading ? (editData ? "Guardando..." : "Creando solicitud...") : (
                                 <>
-                                    <Send size={22} /> Enviar Solicitud
+                                    <Send size={22} /> {editData ? "Guardar Cambios" : "Enviar Solicitud"}
                                 </>
                             )}
                         </button>

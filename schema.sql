@@ -40,11 +40,40 @@ INSERT INTO sectors (name) VALUES
 ('Piso 2'), 
 ('UTI'), 
 ('Imágenes (Rayos)'), 
-('Imágenes (Resonancia)')
+('Imágenes (Resonancia)'),
+('Imágenes (Tomografia)')
 ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO transfer_types (name) VALUES 
 ('Camilla'), 
-('Silla de Ruedas'), 
-('A pie')
+('Silla de Ruedas')
 ON CONFLICT (name) DO NOTHING;
+
+-- ==========================================
+-- CONFIGURACIÓN DE SEGURIDAD (RLS)
+-- ==========================================
+
+-- 1. Habilitar RLS en todas las tablas
+ALTER TABLE sectors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE transfer_types ENABLE ROW LEVEL SECURITY;
+ALTER TABLE transfers ENABLE ROW LEVEL SECURITY;
+
+-- 2. Políticas para Sectores (Lectura pública para usuarios anónimos)
+CREATE POLICY "Lectura pública de sectores" 
+ON sectors FOR SELECT 
+TO anon 
+USING (true);
+
+-- 3. Políticas para Tipos de Traslado (Lectura pública para usuarios anónimos)
+CREATE POLICY "Lectura pública de tipos" 
+ON transfer_types FOR SELECT 
+TO anon 
+USING (true);
+
+-- 4. Políticas para Traslados (Acceso completo para la demo)
+-- NOTA: En un entorno real, esto se restringiría por autenticación (auth.uid())
+CREATE POLICY "Acceso público a traslados" 
+ON transfers FOR ALL 
+TO anon 
+USING (true) 
+WITH CHECK (true);

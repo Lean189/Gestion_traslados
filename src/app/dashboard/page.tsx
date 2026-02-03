@@ -13,7 +13,9 @@ import {
     CircleDot,
     ArrowRightLeft,
     Calendar,
-    Info
+    Info,
+    Edit2,
+    Trash2
 } from "lucide-react";
 
 import TransferForm from "@/components/TransferForm";
@@ -30,6 +32,7 @@ export default function Dashboard() {
     const [activeTab, setActiveTab] = useState<'live' | 'history' | 'stats'>('live');
     const [searchQuery, setSearchQuery] = useState("");
     const [filterStatus, setFilterStatus] = useState("TODOS");
+    const [transferToEdit, setTransferToEdit] = useState<TransferJoined | null>(null);
 
     const fetchTransfers = useCallback(async () => {
         const { data, error } = await supabase
@@ -69,7 +72,7 @@ export default function Dashboard() {
                 supabase.removeChannel(channel);
             };
         }
-    }, [fetchTransfers]);
+    }, [fetchTransfers, supabase]);
 
     const updateStatus = async (id: string, nextStatus: string) => {
         const updateData: {
@@ -87,6 +90,21 @@ export default function Dashboard() {
             .eq('id', id);
 
         if (error) console.error("Error: " + error.message);
+    };
+
+    const deleteTransfer = async (id: string) => {
+        if (!confirm("¿Estás seguro de que deseas eliminar este traslado?")) return;
+
+        const { error } = await supabase
+            .from('transfers')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            alert("Error al eliminar: " + error.message);
+        } else {
+            fetchTransfers();
+        }
     };
 
     const logout = () => {
@@ -166,7 +184,7 @@ export default function Dashboard() {
                             </div>
                         )}
 
-                        {(role === 'enfermeria' || role === 'sector' || role === 'imagenes') && (
+                        {(role === 'sector' || role === 'imagenes') && (
                             <>
                                 {/* Botón de escritorio */}
                                 <button
@@ -294,6 +312,25 @@ export default function Dashboard() {
                                                     >
                                                         Detalles
                                                     </button>
+
+                                                    {(role === 'admin' || role === 'sector') && (
+                                                        <div className="flex gap-2 w-full lg:w-auto">
+                                                            <button
+                                                                onClick={() => setTransferToEdit(transfer)}
+                                                                className="p-3 rounded-xl hover:bg-blue-50 text-blue-400 hover:text-blue-600 transition-all border border-slate-100 flex-1 lg:flex-none justify-center flex items-center"
+                                                                title="Editar"
+                                                            >
+                                                                <Edit2 size={18} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => deleteTransfer(transfer.id)}
+                                                                className="p-3 rounded-xl hover:bg-red-50 text-red-400 hover:text-red-600 transition-all border border-slate-100 flex-1 lg:flex-none justify-center flex items-center"
+                                                                title="Eliminar"
+                                                            >
+                                                                <Trash2 size={18} />
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -439,6 +476,14 @@ export default function Dashboard() {
             {isModalOpen && (
                 <TransferForm
                     onClose={() => setIsModalOpen(false)}
+                    onSuccess={fetchTransfers}
+                />
+            )}
+
+            {transferToEdit && (
+                <TransferForm
+                    editData={transferToEdit}
+                    onClose={() => setTransferToEdit(null)}
                     onSuccess={fetchTransfers}
                 />
             )}

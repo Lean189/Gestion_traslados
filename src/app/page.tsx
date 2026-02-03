@@ -46,7 +46,7 @@ export default function LoginPage() {
             <Truck size={32} />
           </div>
           <h1 className="text-3xl font-bold text-slate-900">Gestión de Traslados</h1>
-          <p className="text-slate-500 mt-2 text-lg italic">Sanatorio San José</p>
+          <p className="text-slate-500 mt-2 text-lg italic">Sanatorio XXX</p>
         </div>
 
         <div className="bg-white rounded-3xl p-8 card-shadow border border-slate-100">
