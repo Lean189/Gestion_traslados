@@ -6,11 +6,14 @@ import {
   Truck,
   Stethoscope,
   ChevronRight,
-  Lock
+  Lock,
+  Eye,
+  EyeOff
 } from "lucide-react";
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [error, setError] = useState("");
 
@@ -82,16 +85,25 @@ export default function LoginPage() {
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Contraseña de {roles.find(r => r.id === selectedRole)?.name}
                 </label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                <div className="relative group/input">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/input:text-blue-500 transition-colors">
+                    <Lock size={20} />
+                  </div>
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Introduce la clave de prueba"
-                    className="input-field pl-12 text-slate-950 font-medium"
+                    className="input-field pl-12 pr-12 text-slate-950 font-medium"
                     onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none p-1 rounded-lg hover:bg-slate-100 transition-all"
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
                 </div>
                 {error && <p className="text-red-500 text-xs mt-2 font-medium">{error}</p>}
               </div>

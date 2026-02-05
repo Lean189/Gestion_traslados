@@ -65,7 +65,9 @@ export default function TransferForm({
                 onSuccess();
                 onClose();
             } else {
-                setError("Error al actualizar la solicitud: " + dbError.message);
+                let msg = "No se pudo actualizar la solicitud.";
+                if (dbError.message.includes("fetch")) msg = "Error de conexión. Verifica tu internet.";
+                setError(msg + " (Detalle: " + dbError.message + ")");
             }
         } else {
             const { error: dbError } = await supabase
@@ -76,7 +78,9 @@ export default function TransferForm({
                 onSuccess();
                 onClose();
             } else {
-                setError("Error al crear la solicitud: " + dbError.message);
+                let msg = "No se pudo crear la solicitud.";
+                if (dbError.message.includes("fetch")) msg = "Error de conexión. Verifica tu internet.";
+                setError(msg + " (Detalle: " + dbError.message + ")");
             }
         }
         setLoading(false);
@@ -121,8 +125,9 @@ export default function TransferForm({
                             />
                         </div>
                         <div className="col-span-full">
-                            <label className="block text-sm font-bold text-slate-700 mb-2">DNI del Paciente (Opcional)</label>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">DNI del Paciente *</label>
                             <input
+                                required
                                 type="text"
                                 placeholder="Ej: 35.123.456"
                                 className="input-field"

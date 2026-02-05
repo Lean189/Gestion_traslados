@@ -13,9 +13,9 @@ import {
     CircleDot,
     ArrowRightLeft,
     Calendar,
-    Info,
     Edit2,
-    Trash2
+    Trash2,
+    X
 } from "lucide-react";
 
 import TransferForm from "@/components/TransferForm";
@@ -32,6 +32,7 @@ export default function Dashboard() {
     const [activeTab, setActiveTab] = useState<'live' | 'history' | 'stats'>('live');
     const [searchQuery, setSearchQuery] = useState("");
     const [filterStatus, setFilterStatus] = useState("TODOS");
+    const [filterDate, setFilterDate] = useState("");
     const [transferToEdit, setTransferToEdit] = useState<TransferJoined | null>(null);
 
     const fetchTransfers = useCallback(async () => {
@@ -72,24 +73,63 @@ export default function Dashboard() {
                 supabase.removeChannel(channel);
             };
         }
-    }, [fetchTransfers, supabase]);
+    }, [fetchTransfers]);
 
     const updateStatus = async (id: string, nextStatus: string) => {
-        const updateData: {
-            status: string;
-            accepted_at?: string;
-            completed_at?: string;
-        } = { status: nextStatus };
+        try {
+            // 1. Obtener el estado actual del traslado antes de actualizar
+            const { data: current, error: fetchError } = await supabase
+                .from('transfers')
+                .select('status')
+                .eq('id', id)
+                .single();
 
-        if (nextStatus === 'EN_CURSO') updateData.accepted_at = new Date().toISOString();
-        if (nextStatus === 'COMPLETADO') updateData.completed_at = new Date().toISOString();
+            if (fetchError || !current) {
+                alert("Error al verificar el estado del traslado. Verifica tu conexión.");
+                return;
+            }
 
-        const { error } = await supabase
-            .from('transfers')
-            .update(updateData)
-            .eq('id', id);
+            // 2. Validaciones de flujo lógico
+            if (nextStatus === 'EN_CURSO' && current.status !== 'PENDIENTE') {
+                alert("Este traslado ya no está disponible (fue tomado por otro camillero o cancelado).");
+                fetchTransfers(); // Refrescar lista
+                return;
+            }
 
-        if (error) console.error("Error: " + error.message);
+            if (nextStatus === 'COMPLETADO' && current.status !== 'EN_CURSO') {
+                alert("El traslado debe estar 'En Curso' para poder finalizarlo.");
+                fetchTransfers();
+                return;
+            }
+
+            // 3. Preparar datos de actualización
+            const updateData: {
+                status: string;
+                accepted_at?: string;
+                completed_at?: string;
+            } = { status: nextStatus };
+
+            if (nextStatus === 'EN_CURSO') updateData.accepted_at = new Date().toISOString();
+            if (nextStatus === 'COMPLETADO') updateData.completed_at = new Date().toISOString();
+
+            // 4. Realizar la actualización con un check adicional de seguridad (mismo estado que leímos)
+            const { error: updateError } = await supabase
+                .from('transfers')
+                .update(updateData)
+                .eq('id', id)
+                .eq('status', current.status); // Check atómico: solo actualiza si el estado no cambió en el milisegundo intermedio
+
+            if (updateError) {
+                alert("No se pudo actualizar: " + updateError.message);
+            } else {
+                // Éxito: el realtime channel se encargará de refrescar la UI, 
+                // pero forzamos un fetch para estar seguros en conexiones lentas.
+                fetchTransfers();
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Ocurrió un error inesperado al actualizar el traslado.");
+        }
     };
 
     const deleteTransfer = async (id: string) => {
@@ -112,11 +152,39 @@ export default function Dashboard() {
         window.location.href = "/";
     };
 
+    const cancelTransfer = async (transfer: TransferJoined) => {
+        const reason = prompt("Ingrese el motivo de la cancelación:");
+        if (reason === null) return; // Usuario canceló el prompt
+        if (!reason.trim()) {
+            alert("Debe ingresar un motivo para cancelar.");
+            return;
+        }
+
+        const newObservation = transfer.observation
+            ? `${transfer.observation}\n\nMOTIVO CANCELACIÓN: ${reason}`
+            : `MOTIVO CANCELACIÓN: ${reason}`;
+
+        const { error } = await supabase
+            .from('transfers')
+            .update({
+                status: 'CANCELADO',
+                observation: newObservation
+            })
+            .eq('id', transfer.id);
+
+        if (error) {
+            alert("Error al cancelar: " + error.message);
+        } else {
+            fetchTransfers();
+        }
+    };
+
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'PENDIENTE': return <span className="badge bg-amber-100 text-amber-700">Pendiente</span>;
             case 'EN_CURSO': return <span className="badge bg-blue-100 text-blue-700">En Curso</span>;
             case 'COMPLETADO': return <span className="badge bg-emerald-100 text-emerald-700">Completado</span>;
+            case 'CANCELADO': return <span className="badge bg-red-100 text-red-700">Cancelado</span>;
             default: return <span className="badge bg-slate-100 text-slate-700">{status}</span>;
         }
     };
@@ -313,23 +381,30 @@ export default function Dashboard() {
                                                         Detalles
                                                     </button>
 
-                                                    {(role === 'admin' || role === 'sector') && (
-                                                        <div className="flex gap-2 w-full lg:w-auto">
-                                                            <button
-                                                                onClick={() => setTransferToEdit(transfer)}
-                                                                className="p-3 rounded-xl hover:bg-blue-50 text-blue-400 hover:text-blue-600 transition-all border border-slate-100 flex-1 lg:flex-none justify-center flex items-center"
-                                                                title="Editar"
-                                                            >
-                                                                <Edit2 size={18} />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => deleteTransfer(transfer.id)}
-                                                                className="p-3 rounded-xl hover:bg-red-50 text-red-400 hover:text-red-600 transition-all border border-slate-100 flex-1 lg:flex-none justify-center flex items-center"
-                                                                title="Eliminar"
-                                                            >
-                                                                <Trash2 size={18} />
-                                                            </button>
-                                                        </div>
+                                                    <button
+                                                        onClick={() => setTransferToEdit(transfer)}
+                                                        className="p-3 rounded-xl hover:bg-blue-50 text-blue-400 hover:text-blue-600 transition-all border border-slate-100 flex-1 lg:flex-none justify-center flex items-center"
+                                                        title="Editar"
+                                                    >
+                                                        <Edit2 size={18} />
+                                                    </button>
+                                                    {role === 'admin' && (
+                                                        <button
+                                                            onClick={() => deleteTransfer(transfer.id)}
+                                                            className="p-3 rounded-xl hover:bg-red-50 text-red-400 hover:text-red-600 transition-all border border-slate-100 flex-1 lg:flex-none justify-center flex items-center"
+                                                            title="Eliminar"
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    )}
+                                                    {(role === 'admin' || role === 'sector') && transfer.status !== 'CANCELADO' && transfer.status !== 'COMPLETADO' && (
+                                                        <button
+                                                            onClick={() => cancelTransfer(transfer)}
+                                                            className="p-3 rounded-xl hover:bg-orange-50 text-orange-400 hover:text-orange-600 transition-all border border-slate-100 flex-1 lg:flex-none justify-center flex items-center"
+                                                            title="Cancelar Traslado"
+                                                        >
+                                                            <X size={18} />
+                                                        </button>
                                                     )}
                                                 </div>
                                             </div>
@@ -360,10 +435,29 @@ export default function Dashboard() {
                                 onChange={(e) => setFilterStatus(e.target.value)}
                             >
                                 <option value="TODOS">Todos los estados</option>
-                                <option value="PENDIENTE">Pendientes</option>
                                 <option value="EN_CURSO">En Curso</option>
                                 <option value="COMPLETADO">Completados</option>
+                                <option value="CANCELADO">Cancelados</option>
                             </select>
+                            <input
+                                type="date"
+                                className="input-field md:w-48"
+                                value={filterDate}
+                                onChange={(e) => setFilterDate(e.target.value)}
+                            />
+                            {(searchQuery || filterStatus !== "TODOS" || filterDate) && (
+                                <button
+                                    onClick={() => {
+                                        setSearchQuery("");
+                                        setFilterStatus("TODOS");
+                                        setFilterDate("");
+                                    }}
+                                    className="p-3 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-all border border-slate-200"
+                                    title="Limpiar filtros"
+                                >
+                                    <X size={20} />
+                                </button>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 pb-20">
@@ -372,7 +466,8 @@ export default function Dashboard() {
                                     const matchSearch = t.patient_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                                         (t.patient_history_number?.includes(searchQuery));
                                     const matchStatus = filterStatus === "TODOS" || t.status === filterStatus;
-                                    return matchSearch && matchStatus;
+                                    const matchDate = !filterDate || new Date(t.requested_at).toISOString().split('T')[0] === filterDate;
+                                    return matchSearch && matchStatus && matchDate;
                                 })
                                 .map((transfer: TransferJoined) => (
                                     <div key={transfer.id} className="bg-white p-5 rounded-3xl card-shadow border border-slate-100 opacity-90 hover:opacity-100 transition-all">
