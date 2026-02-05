@@ -424,7 +424,7 @@ export default function Dashboard() {
                                 <input
                                     type="text"
                                     placeholder="Buscar por paciente o DNI..."
-                                    className="input-field pl-12"
+                                    className="input-field pl-14"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />

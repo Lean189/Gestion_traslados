@@ -86,7 +86,7 @@ export default function LoginPage() {
                   Contraseña de {roles.find(r => r.id === selectedRole)?.name}
                 </label>
                 <div className="relative group/input">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/input:text-blue-500 transition-colors">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/input:text-blue-500 transition-colors z-10">
                     <Lock size={20} />
                   </div>
                   <input
@@ -94,7 +94,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Introduce la clave de prueba"
-                    className="input-field pl-12 pr-12 text-slate-950 font-medium"
+                    className="input-field pl-14 pr-12 text-slate-950 font-medium"
                     onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                   />
                   <button
