@@ -94,7 +94,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Introduce la clave de prueba"
-                    className="input-field pl-14 pr-12 text-slate-950 font-medium"
+                    className="input-field !pl-14 pr-12 text-slate-950 font-medium"
                     onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                   />
                   <button

@@ -35,21 +35,33 @@ export default function Dashboard() {
     const [filterDate, setFilterDate] = useState("");
     const [transferToEdit, setTransferToEdit] = useState<TransferJoined | null>(null);
 
-    const fetchTransfers = useCallback(async () => {
-        const { data, error } = await supabase
-            .from('transfers')
-            .select(`
-        *,
-        origin_sector:sectors!origin_sector_id(name),
-        destination_sector:sectors!destination_sector_id(name),
-        transfer_type:transfer_types!transfer_type_id(name)
-      `)
-            .order('requested_at', { ascending: false });
+    const [error, setError] = useState<string | null>(null);
 
-        if (!error) {
-            setTransfers((data || []) as unknown as TransferJoined[]);
+    const fetchTransfers = useCallback(async () => {
+        try {
+            const { data, error: dbError } = await supabase
+                .from('transfers')
+                .select(`
+            *,
+            origin_sector:sectors!origin_sector_id(name),
+            destination_sector:sectors!destination_sector_id(name),
+            transfer_type:transfer_types!transfer_type_id(name)
+          `)
+                .order('requested_at', { ascending: false });
+
+            if (dbError) {
+                console.error("Database error:", dbError);
+                setError("Error al cargar los traslados. Verifica tu conexión.");
+            } else {
+                setTransfers((data || []) as unknown as TransferJoined[]);
+                setError(null);
+            }
+        } catch (err) {
+            console.error("Unexpected error:", err);
+            setError("Error inesperado en la conexión.");
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     }, []);
 
     useEffect(() => {
@@ -274,6 +286,19 @@ export default function Dashboard() {
                         )}
                     </div>
                 </div>
+
+                {error && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-sm flex items-center gap-3 font-medium animate-in slide-in-from-top-2">
+                        <AlertCircle size={20} />
+                        {error}
+                        <button
+                            onClick={() => fetchTransfers()}
+                            className="ml-auto underline hover:text-red-800 transition-colors"
+                        >
+                            Reintentar
+                        </button>
+                    </div>
+                )}
 
                 {activeTab === 'live' && (
                     <>
