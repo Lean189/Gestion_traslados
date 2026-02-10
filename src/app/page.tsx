@@ -183,15 +183,22 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              <div>
-                <div className="flex justify-center gap-3">
+              <div className="relative">
+                <div
+                  className="flex justify-center gap-3 cursor-text"
+                  onClick={() => {
+                    const input = document.getElementById('pin-input');
+                    input?.focus();
+                  }}
+                >
                   {[0, 1, 2, 3].map((i) => (
-                    <div key={i} className={`w-12 h-16 rounded-2xl border-2 flex items-center justify-center text-2xl font-black ${pin.length > i ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-slate-100 bg-slate-50 text-slate-300'}`}>
+                    <div key={i} className={`w-12 h-16 rounded-2xl border-2 flex items-center justify-center text-2xl font-black transition-all ${pin.length > i ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-slate-100 bg-slate-50 text-slate-300'}`}>
                       {pin[i] ? '•' : ''}
                     </div>
                   ))}
                 </div>
                 <input
+                  id="pin-input"
                   autoFocus
                   type="password"
                   inputMode="numeric"
@@ -201,14 +208,8 @@ export default function LoginPage() {
                   onChange={(e) => {
                     const val = e.target.value.replace(/\D/g, '');
                     setPin(val);
-                    if (val.length === 4) {
-                      // Pequeño delay para visualización
-                      setTimeout(() => {
-                        // handleLogin() se llama abajo por el useEffect o manual
-                      }, 100);
-                    }
                   }}
-                  className="opacity-0 absolute inset-0 cursor-default"
+                  className="opacity-0 absolute inset-0 w-full h-full cursor-default"
                 />
                 {error && <p className="text-red-500 text-xs mt-4 text-center font-bold animate-pulse">{error}</p>}
               </div>
