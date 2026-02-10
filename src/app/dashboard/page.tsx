@@ -106,7 +106,7 @@ export default function Dashboard() {
     const exportToCSV = () => {
         if (transfers.length === 0) return;
 
-        const headers = ["ID", "Paciente", "DNI", "Origen", "Destino", "Tipo", "Estado", "Prioridad", "Fecha Solicitud", "Aceptado", "Completado"];
+        const headers = ["ID", "Paciente", "DNI", "Origen", "Destino", "Tipo", "Estado", "Prioridad", "Camillero", "Fecha Solicitud", "Aceptado", "Completado"];
         const rows = transfers.map(t => [
             t.id,
             t.patient_name,
@@ -116,6 +116,7 @@ export default function Dashboard() {
             t.transfer_type?.name || "",
             t.status,
             t.priority,
+            t.transporter_name || "",
             new Date(t.requested_at).toLocaleString(),
             t.accepted_at ? new Date(t.accepted_at).toLocaleString() : "",
             t.completed_at ? new Date(t.completed_at).toLocaleString() : ""
@@ -162,9 +163,18 @@ export default function Dashboard() {
                 status: string;
                 accepted_at?: string;
                 completed_at?: string;
+                transporter_name?: string;
             } = { status: nextStatus };
 
-            if (nextStatus === 'EN_CURSO') updateData.accepted_at = new Date().toISOString();
+            if (nextStatus === 'EN_CURSO') {
+                updateData.accepted_at = new Date().toISOString();
+                const name = prompt("Por favor, ingresa tu nombre para aceptar el traslado:");
+                if (!name || name.trim() === "") {
+                    alert("Es necesario ingresar un nombre para el registro equitativo del trabajo.");
+                    return;
+                }
+                updateData.transporter_name = name;
+            }
             if (nextStatus === 'COMPLETADO') updateData.completed_at = new Date().toISOString();
 
             const { error: updateError } = await supabase

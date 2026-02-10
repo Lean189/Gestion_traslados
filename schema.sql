@@ -19,7 +19,9 @@ CREATE TABLE IF NOT EXISTS transfers (
   patient_history_number TEXT,
   -- Opcional: DNI o HC
   patient_room TEXT,
-  -- Nuevo campo para la habitación
+  -- Nuevo campo para la habitación de origen
+  destination_room TEXT,
+  -- Nuevo campo para la habitación de destino
   origin_sector_id UUID REFERENCES sectors(id),
   destination_sector_id UUID REFERENCES sectors(id),
   transfer_type_id UUID REFERENCES transfer_types(id),
@@ -38,6 +40,8 @@ CREATE TABLE IF NOT EXISTS transfers (
   transporter_id UUID,
   -- Referencia al camillero asignado
   observation TEXT,
+  transporter_name TEXT,
+  -- Nombre del camillero que aceptó el traslado
   requested_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   accepted_at TIMESTAMP WITH TIME ZONE,
   completed_at TIMESTAMP WITH TIME ZONE

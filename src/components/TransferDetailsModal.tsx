@@ -125,9 +125,16 @@ export default function TransferDetailsModal({ transfer, onClose }: TransferDeta
                             </div>
                             <div className="space-y-1">
                                 <p className="text-[10px] font-bold text-slate-400 uppercase">Aceptado</p>
-                                <div className="flex items-center gap-1">
-                                    {transfer.accepted_at ? <PlayCircle size={14} className="text-blue-500" /> : null}
-                                    <p className="text-sm font-bold text-slate-700">{formatTime(transfer.accepted_at)}</p>
+                                <div className="flex flex-col gap-1">
+                                    <div className="flex items-center gap-1">
+                                        {transfer.accepted_at ? <PlayCircle size={14} className="text-blue-500" /> : null}
+                                        <p className="text-sm font-bold text-slate-700">{formatTime(transfer.accepted_at)}</p>
+                                    </div>
+                                    {transfer.transporter_name && (
+                                        <p className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md w-fit">
+                                            Por: {transfer.transporter_name}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                             <div className="space-y-1">

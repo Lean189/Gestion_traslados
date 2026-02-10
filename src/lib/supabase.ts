@@ -65,6 +65,7 @@ export type Database = {
           requester_id: string | null;
           transporter_id: string | null;
           observation: string | null;
+          transporter_name: string | null;
           patient_room: string | null;
           destination_room: string | null;
           requested_at: string;
@@ -83,6 +84,7 @@ export type Database = {
           requester_id?: string | null;
           transporter_id?: string | null;
           observation?: string | null;
+          transporter_name?: string | null;
           patient_room?: string | null;
           destination_room?: string | null;
           requested_at?: string;
@@ -130,6 +132,7 @@ export interface TransferJoined {
   priority: 'BAJA' | 'MEDIA' | 'ALTA' | 'URGENTE';
   status: 'PENDIENTE' | 'EN_ADJUDICACION' | 'EN_CURSO' | 'COMPLETADO' | 'CANCELADO';
   observation: string | null;
+  transporter_name: string | null;
   patient_room: string | null;
   destination_room: string | null;
   requested_at: string;
