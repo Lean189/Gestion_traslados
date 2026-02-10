@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase, Sector, TransferType, TransferJoined } from "@/lib/supabase";
-import { X, Send, AlertCircle } from "lucide-react";
+import { X, Send, AlertCircle, ChevronDown } from "lucide-react";
 
 export default function TransferForm({
     onClose,
@@ -24,7 +24,7 @@ export default function TransferForm({
         origin_sector_id: editData?.origin_sector_id || "",
         destination_sector_id: editData?.destination_sector_id || "",
         transfer_type_id: editData?.transfer_type_id || "",
-        priority: editData?.priority || "MEDIA",
+        patient_room: editData?.patient_room || "",
         observation: editData?.observation || ""
     });
 
@@ -33,11 +33,40 @@ export default function TransferForm({
         const { data: typesData } = await supabase.from('transfer_types').select('id, name').order('name');
         setSectors(sectorsData as Sector[] || []);
         setTypes(typesData as TransferType[] || []);
-    }, [supabase]);
+    }, []);
 
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    const selectedOriginSector = useMemo(() =>
+        sectors.find(s => s.id === formData.origin_sector_id),
+        [sectors, formData.origin_sector_id]);
+
+    const availableRooms = useMemo(() => {
+        if (!selectedOriginSector) return [];
+        const name = selectedOriginSector.name.toLowerCase();
+
+        if (name.includes("guardia")) {
+            return ["121", "122", "123", "124", "125", "126", "127"];
+        }
+        if (name.includes("consultorio")) {
+            return Array.from({ length: 10 }, (_, i) => `${i + 1}`);
+        }
+
+        const floorMatch = selectedOriginSector.name.match(/Piso (\d+)/i);
+        if (floorMatch) {
+            const floorNum = floorMatch[1];
+            const rooms = Array.from({ length: 24 }, (_, i) => `${floorNum}${String(i + 1).padStart(2, '0')}`);
+            if (floorNum === "2") {
+                rooms.push(...Array.from({ length: 10 }, (_, i) => `QX ${i + 1}`));
+            } else if (floorNum === "5") {
+                rooms.push("QX 1", "QX 2");
+            }
+            return rooms;
+        }
+        return [];
+    }, [selectedOriginSector]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -52,7 +81,9 @@ export default function TransferForm({
 
         const dataToInsert = {
             ...formData,
-            patient_history_number: formData.patient_history_number || null
+            patient_history_number: formData.patient_history_number || null,
+            patient_room: formData.patient_room || null,
+            priority: 'MEDIA' // Valor por defecto ya que se eliminó del UI
         };
 
         if (editData?.id) {
@@ -140,73 +171,96 @@ export default function TransferForm({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-2">Sector Origen *</label>
-                            <select
-                                required
-                                className="input-field"
-                                value={formData.origin_sector_id}
-                                onChange={(e) => setFormData({ ...formData, origin_sector_id: e.target.value })}
-                            >
-                                <option value="">Seleccionar...</option>
-                                {sectors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
+                            <div className="relative">
+                                <select
+                                    required
+                                    className="input-field appearance-none"
+                                    value={formData.origin_sector_id}
+                                    onChange={(e) => {
+                                        setFormData({
+                                            ...formData,
+                                            origin_sector_id: e.target.value,
+                                            patient_room: "" // Reset room when sector changes
+                                        });
+                                    }}
+                                >
+                                    <option value="">Seleccionar...</option>
+                                    {sectors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                </select>
+                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                            </div>
                         </div>
-                        <div>
+
+                        {availableRooms.length > 0 && (
+                            <div className="animate-in fade-in slide-in-from-left-2">
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Habitación *</label>
+                                <div className="relative">
+                                    <select
+                                        required
+                                        className="input-field appearance-none"
+                                        value={formData.patient_room}
+                                        onChange={(e) => setFormData({ ...formData, patient_room: e.target.value })}
+                                    >
+                                        <option value="">Seleccionar...</option>
+                                        {availableRooms.map(r => <option key={r} value={r}>{r}</option>)}
+                                    </select>
+                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                                </div>
+                            </div>
+                        )}
+
+                        <div className={availableRooms.length > 0 ? "" : "col-span-full"}>
                             <label className="block text-sm font-bold text-slate-700 mb-2">Sector Destino *</label>
-                            <select
-                                required
-                                className="input-field"
-                                value={formData.destination_sector_id}
-                                onChange={(e) => setFormData({ ...formData, destination_sector_id: e.target.value })}
-                            >
-                                <option value="">Seleccionar...</option>
-                                {sectors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
+                            <div className="relative">
+                                <select
+                                    required
+                                    className="input-field appearance-none"
+                                    value={formData.destination_sector_id}
+                                    onChange={(e) => setFormData({ ...formData, destination_sector_id: e.target.value })}
+                                >
+                                    <option value="">Seleccionar...</option>
+                                    {sectors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                </select>
+                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                            </div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">Tipo de Traslado *</label>
-                            <select
-                                required
-                                className="input-field"
-                                value={formData.transfer_type_id}
-                                onChange={(e) => setFormData({ ...formData, transfer_type_id: e.target.value })}
-                            >
-                                <option value="">Seleccionar...</option>
-                                {types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                            </select>
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-3">Tipo de Traslado *</label>
+                        <div className="grid grid-cols-2 gap-3">
+                            {types.map(t => (
+                                <button
+                                    key={t.id}
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, transfer_type_id: t.id })}
+                                    className={`px-4 py-4 rounded-2xl text-sm font-bold transition-all border-2 flex flex-col items-center justify-center gap-2 ${formData.transfer_type_id === t.id
+                                        ? "bg-blue-50 border-blue-500 text-blue-700 shadow-sm"
+                                        : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
+                                        }`}
+                                >
+                                    {t.name}
+                                </button>
+                            ))}
                         </div>
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">Prioridad</label>
-                            <select
-                                className="input-field"
-                                value={formData.priority}
-                                onChange={(e) => setFormData({ ...formData, priority: e.target.value as 'BAJA' | 'MEDIA' | 'ALTA' | 'URGENTE' })}
-                            >
-                                <option value="BAJA">Baja</option>
-                                <option value="MEDIA">Media</option>
-                                <option value="ALTA">Alta</option>
-                                <option value="URGENTE">Urgente</option>
-                            </select>
-                        </div>
+                        <input type="hidden" required value={formData.transfer_type_id} />
                     </div>
 
                     <div>
                         <label className="block text-sm font-bold text-slate-700 mb-2">Observaciones</label>
                         <textarea
-                            className="input-field min-h-[120px] resize-none"
-                            placeholder="Ej: Requiere oxígeno, paciente con movilidad reducida..."
+                            className="input-field min-h-[100px] resize-none"
+                            placeholder="Ej: Requiere oxígeno, movilidad reducida..."
                             value={formData.observation}
                             onChange={(e) => setFormData({ ...formData, observation: e.target.value })}
                         />
                     </div>
 
-                    <div className="pt-6">
+                    <div className="pt-4">
                         <button
-                            disabled={loading}
+                            disabled={loading || !formData.transfer_type_id}
                             type="submit"
-                            className="btn-primary w-full py-5 flex items-center justify-center gap-3 text-lg rounded-2xl shadow-blue-500/25"
+                            className="btn-primary w-full py-5 flex items-center justify-center gap-3 text-lg rounded-2xl shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? (editData ? "Guardando..." : "Creando solicitud...") : (
                                 <>

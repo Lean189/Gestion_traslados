@@ -3,7 +3,6 @@
 import { TransferJoined } from "@/lib/supabase";
 import {
     X,
-    Clock,
     MapPin,
     User,
     Info,
@@ -24,10 +23,6 @@ export default function TransferDetailsModal({ transfer, onClose }: TransferDeta
         return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " hs";
     };
 
-    const formatDate = (dateStr: string | null) => {
-        if (!dateStr) return "-";
-        return new Date(dateStr).toLocaleDateString([], { day: '2-digit', month: '2-digit', year: 'numeric' });
-    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/60 backdrop-blur-sm">
@@ -57,7 +52,14 @@ export default function TransferDetailsModal({ transfer, onClose }: TransferDeta
                             <p className="text-xs font-bold text-slate-400 uppercase">Paciente</p>
                             <div className="flex items-center gap-3">
                                 <User className="text-blue-500" size={20} />
-                                <span className="text-lg font-bold text-slate-800">{transfer.patient_name}</span>
+                                <div className="flex flex-col">
+                                    <span className="text-lg font-bold text-slate-800">{transfer.patient_name}</span>
+                                    {transfer.patient_room && (
+                                        <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg w-fit">
+                                            Habitación {transfer.patient_room}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                         <div className="space-y-1">
@@ -96,17 +98,6 @@ export default function TransferDetailsModal({ transfer, onClose }: TransferDeta
                                 <div className="flex items-center gap-3">
                                     <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-sm font-bold">
                                         {transfer.transfer_type?.name}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-xs font-bold text-slate-400 uppercase">Prioridad</p>
-                                <div className="flex items-center gap-3">
-                                    <span className={`px-3 py-1 rounded-lg text-sm font-bold ${transfer.priority === 'URGENTE'
-                                        ? 'bg-red-100 text-red-700'
-                                        : 'bg-slate-100 text-slate-700'
-                                        }`}>
-                                        {transfer.priority}
                                     </span>
                                 </div>
                             </div>
