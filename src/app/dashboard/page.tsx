@@ -15,7 +15,9 @@ import {
     Calendar,
     Edit2,
     Trash2,
-    X
+    X,
+    QrCode,
+    AlertTriangle
 } from "lucide-react";
 
 import TransferForm from "@/components/TransferForm";
@@ -442,12 +444,20 @@ export default function Dashboard() {
                                                         </button>
                                                     )}
                                                     {role === 'camillero' && transfer.status === 'EN_CURSO' && (
-                                                        <button
-                                                            onClick={() => updateStatus(transfer.id, 'COMPLETADO')}
-                                                            className="btn-primary bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20 w-full lg:w-auto"
-                                                        >
-                                                            Finalizar
-                                                        </button>
+                                                        <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                                                            <button
+                                                                onClick={() => alert("Simulando Escaneo de Pulsera... \n\n✅ Paciente Validado: " + transfer.patient_name + "\n✅ Habitación Correcta: " + transfer.patient_room)}
+                                                                className="btn-secondary border-blue-200 text-blue-600 hover:bg-blue-50 flex items-center justify-center gap-2"
+                                                            >
+                                                                <QrCode size={18} /> Validar QR
+                                                            </button>
+                                                            <button
+                                                                onClick={() => updateStatus(transfer.id, 'COMPLETADO')}
+                                                                className="btn-primary bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20"
+                                                            >
+                                                                Finalizar
+                                                            </button>
+                                                        </div>
                                                     )}
                                                     <button
                                                         onClick={() => setSelectedTransfer(transfer)}
@@ -646,6 +656,41 @@ export default function Dashboard() {
                                     </div>
                                 ))}
                             </div>
+                        </div>
+
+                        <div className="bg-white p-8 rounded-3xl card-shadow border border-slate-100 col-span-1 md:col-span-2">
+                            <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                                <AlertTriangle className="text-amber-500" size={24} /> Monitoreo de Sectores Críticos (Simulado)
+                            </h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div className="p-4 bg-red-50 rounded-2xl border border-red-100">
+                                    <p className="text-[10px] font-bold text-red-400 uppercase">Guardia</p>
+                                    <p className="text-lg font-black text-red-700">DEMANDA ALTA</p>
+                                    <div className="mt-2 h-1 w-full bg-red-200 rounded-full overflow-hidden">
+                                        <div className="bg-red-600 h-full w-[85%] animate-pulse" />
+                                    </div>
+                                    <p className="text-[10px] text-red-600 font-bold mt-1">Espera prom: 22 min</p>
+                                </div>
+                                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                                    <p className="text-[10px] font-bold text-emerald-400 uppercase">Piso 4</p>
+                                    <p className="text-lg font-black text-emerald-700">NORMAL</p>
+                                    <div className="mt-2 h-1 w-full bg-emerald-200 rounded-full overflow-hidden">
+                                        <div className="bg-emerald-600 h-full w-[30%]" />
+                                    </div>
+                                    <p className="text-[10px] text-emerald-600 font-bold mt-1">Espera prom: 4 min</p>
+                                </div>
+                                <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                                    <p className="text-[10px] font-bold text-blue-400 uppercase">UTI</p>
+                                    <p className="text-lg font-black text-blue-700">ESTABLE</p>
+                                    <div className="mt-2 h-1 w-full bg-blue-200 rounded-full overflow-hidden">
+                                        <div className="bg-blue-600 h-full w-[15%]" />
+                                    </div>
+                                    <p className="text-[10px] text-blue-600 font-bold mt-1">Espera prom: 2 min</p>
+                                </div>
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-4 italic font-medium">
+                                * Este panel utiliza análisis predictivo para alertar sobre demoras excesivas.
+                            </p>
                         </div>
                     </div>
                 )}

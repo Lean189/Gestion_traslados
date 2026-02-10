@@ -37,7 +37,10 @@ export default function TransferForm({
     }, []);
 
     useEffect(() => {
-        fetchData();
+        const init = async () => {
+            await fetchData();
+        };
+        init();
     }, [fetchData]);
 
     const getAvailableRooms = useCallback((sectorId: string) => {
@@ -154,7 +157,28 @@ export default function TransferForm({
                             />
                         </div>
                         <div className="col-span-full">
-                            <label className="block text-sm font-bold text-slate-700 mb-2">DNI del Paciente *</label>
+                            <label className="block text-sm font-bold text-slate-700 mb-2 flex justify-between items-center">
+                                DNI del Paciente *
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setLoading(true);
+                                        setTimeout(() => {
+                                            setFormData({
+                                                ...formData,
+                                                patient_name: "GARCIA, MARIA ELENA",
+                                                patient_room: "304",
+                                                origin_sector_id: sectors.find(s => s.name.includes("Piso 3"))?.id || ""
+                                            });
+                                            setLoading(false);
+                                            alert("Simulación: Datos recuperados del Sistema HIS (Sanatorio v2.0)");
+                                        }, 800);
+                                    }}
+                                    className="text-[10px] bg-blue-600 text-white px-2 py-1 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-1 font-black uppercase tracking-tighter shadow-sm"
+                                >
+                                    <AlertCircle size={10} /> Conectar HIS
+                                </button>
+                            </label>
                             <input
                                 required
                                 type="text"
