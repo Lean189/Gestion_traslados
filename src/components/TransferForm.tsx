@@ -25,6 +25,7 @@ export default function TransferForm({
         destination_sector_id: editData?.destination_sector_id || "",
         transfer_type_id: editData?.transfer_type_id || "",
         patient_room: editData?.patient_room || "",
+        destination_room: editData?.destination_room || "",
         observation: editData?.observation || ""
     });
 
@@ -39,13 +40,10 @@ export default function TransferForm({
         fetchData();
     }, [fetchData]);
 
-    const selectedOriginSector = useMemo(() =>
-        sectors.find(s => s.id === formData.origin_sector_id),
-        [sectors, formData.origin_sector_id]);
-
-    const availableRooms = useMemo(() => {
-        if (!selectedOriginSector) return [];
-        const name = selectedOriginSector.name.toLowerCase();
+    const getAvailableRooms = useCallback((sectorId: string) => {
+        const sector = sectors.find(s => s.id === sectorId);
+        if (!sector) return [];
+        const name = sector.name.toLowerCase();
 
         if (name.includes("guardia")) {
             return ["121", "122", "123", "124", "125", "126", "127"];
@@ -54,7 +52,7 @@ export default function TransferForm({
             return Array.from({ length: 10 }, (_, i) => `${i + 1}`);
         }
 
-        const floorMatch = selectedOriginSector.name.match(/Piso (\d+)/i);
+        const floorMatch = sector.name.match(/Piso (\d+)/i);
         if (floorMatch) {
             const floorNum = floorMatch[1];
             const rooms = Array.from({ length: 24 }, (_, i) => `${floorNum}${String(i + 1).padStart(2, '0')}`);
@@ -66,7 +64,10 @@ export default function TransferForm({
             return rooms;
         }
         return [];
-    }, [selectedOriginSector]);
+    }, [sectors]);
+
+    const originRooms = useMemo(() => getAvailableRooms(formData.origin_sector_id), [getAvailableRooms, formData.origin_sector_id]);
+    const destinationRooms = useMemo(() => getAvailableRooms(formData.destination_sector_id), [getAvailableRooms, formData.destination_sector_id]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -83,7 +84,8 @@ export default function TransferForm({
             ...formData,
             patient_history_number: formData.patient_history_number || null,
             patient_room: formData.patient_room || null,
-            priority: 'MEDIA' // Valor por defecto ya que se eliminó del UI
+            destination_room: formData.destination_room || null,
+            priority: 'MEDIA'
         };
 
         if (editData?.id) {
@@ -96,9 +98,7 @@ export default function TransferForm({
                 onSuccess();
                 onClose();
             } else {
-                let msg = "No se pudo actualizar la solicitud.";
-                if (dbError.message.includes("fetch")) msg = "Error de conexión. Verifica tu internet.";
-                setError(msg + " (Detalle: " + dbError.message + ")");
+                setError("No se pudo actualizar la solicitud. (Detalle: " + dbError.message + ")");
             }
         } else {
             const { error: dbError } = await supabase
@@ -109,9 +109,7 @@ export default function TransferForm({
                 onSuccess();
                 onClose();
             } else {
-                let msg = "No se pudo crear la solicitud.";
-                if (dbError.message.includes("fetch")) msg = "Error de conexión. Verifica tu internet.";
-                setError(msg + " (Detalle: " + dbError.message + ")");
+                setError("No se pudo crear la solicitud. (Detalle: " + dbError.message + ")");
             }
         }
         setLoading(false);
@@ -168,61 +166,77 @@ export default function TransferForm({
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">Sector Origen *</label>
-                            <div className="relative">
-                                <select
-                                    required
-                                    className="input-field appearance-none"
-                                    value={formData.origin_sector_id}
-                                    onChange={(e) => {
-                                        setFormData({
-                                            ...formData,
-                                            origin_sector_id: e.target.value,
-                                            patient_room: "" // Reset room when sector changes
-                                        });
-                                    }}
-                                >
-                                    <option value="">Seleccionar...</option>
-                                    {sectors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                </select>
-                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                            </div>
-                        </div>
-
-                        {availableRooms.length > 0 && (
-                            <div className="animate-in fade-in slide-in-from-left-2">
-                                <label className="block text-sm font-bold text-slate-700 mb-2">Habitación *</label>
+                    <div className="space-y-6">
+                        {/* Sector Origen */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Sector Origen *</label>
                                 <div className="relative">
                                     <select
                                         required
                                         className="input-field appearance-none"
-                                        value={formData.patient_room}
-                                        onChange={(e) => setFormData({ ...formData, patient_room: e.target.value })}
+                                        value={formData.origin_sector_id}
+                                        onChange={(e) => setFormData({ ...formData, origin_sector_id: e.target.value, patient_room: "" })}
                                     >
                                         <option value="">Seleccionar...</option>
-                                        {availableRooms.map(r => <option key={r} value={r}>{r}</option>)}
+                                        {sectors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                     </select>
                                     <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
                                 </div>
                             </div>
-                        )}
+                            {originRooms.length > 0 && (
+                                <div className="animate-in fade-in slide-in-from-left-2">
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Hab. Origen *</label>
+                                    <div className="relative">
+                                        <select
+                                            required
+                                            className="input-field appearance-none"
+                                            value={formData.patient_room}
+                                            onChange={(e) => setFormData({ ...formData, patient_room: e.target.value })}
+                                        >
+                                            <option value="">Seleccionar...</option>
+                                            {originRooms.map(r => <option key={r} value={r}>{r}</option>)}
+                                        </select>
+                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
-                        <div className={availableRooms.length > 0 ? "" : "col-span-full"}>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">Sector Destino *</label>
-                            <div className="relative">
-                                <select
-                                    required
-                                    className="input-field appearance-none"
-                                    value={formData.destination_sector_id}
-                                    onChange={(e) => setFormData({ ...formData, destination_sector_id: e.target.value })}
-                                >
-                                    <option value="">Seleccionar...</option>
-                                    {sectors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                </select>
-                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                        {/* Sector Destino */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Sector Destino *</label>
+                                <div className="relative">
+                                    <select
+                                        required
+                                        className="input-field appearance-none"
+                                        value={formData.destination_sector_id}
+                                        onChange={(e) => setFormData({ ...formData, destination_sector_id: e.target.value, destination_room: "" })}
+                                    >
+                                        <option value="">Seleccionar...</option>
+                                        {sectors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                    </select>
+                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                                </div>
                             </div>
+                            {destinationRooms.length > 0 && (
+                                <div className="animate-in fade-in slide-in-from-left-2">
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Hab. Destino *</label>
+                                    <div className="relative">
+                                        <select
+                                            required
+                                            className="input-field appearance-none"
+                                            value={formData.destination_room}
+                                            onChange={(e) => setFormData({ ...formData, destination_room: e.target.value })}
+                                        >
+                                            <option value="">Seleccionar...</option>
+                                            {destinationRooms.map(r => <option key={r} value={r}>{r}</option>)}
+                                        </select>
+                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -243,14 +257,13 @@ export default function TransferForm({
                                 </button>
                             ))}
                         </div>
-                        <input type="hidden" required value={formData.transfer_type_id} />
                     </div>
 
                     <div>
                         <label className="block text-sm font-bold text-slate-700 mb-2">Observaciones</label>
                         <textarea
                             className="input-field min-h-[100px] resize-none"
-                            placeholder="Ej: Requiere oxígeno, movilidad reducida..."
+                            placeholder="Ej: Requiere oxígeno..."
                             value={formData.observation}
                             onChange={(e) => setFormData({ ...formData, observation: e.target.value })}
                         />
@@ -260,9 +273,9 @@ export default function TransferForm({
                         <button
                             disabled={loading || !formData.transfer_type_id}
                             type="submit"
-                            className="btn-primary w-full py-5 flex items-center justify-center gap-3 text-lg rounded-2xl shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="btn-primary w-full py-5 flex items-center justify-center gap-3 text-lg rounded-2xl shadow-blue-500/25 disabled:opacity-50"
                         >
-                            {loading ? (editData ? "Guardando..." : "Creando solicitud...") : (
+                            {loading ? "Procesando..." : (
                                 <>
                                     <Send size={22} /> {editData ? "Guardar Cambios" : "Enviar Solicitud"}
                                 </>

@@ -88,7 +88,14 @@ export default function TransferDetailsModal({ transfer, onClose }: TransferDeta
                                 <p className="text-xs font-bold text-slate-400 uppercase">Hacia</p>
                                 <div className="flex items-center gap-3">
                                     <ArrowRightCircle className="text-blue-500" size={18} />
-                                    <span className="font-bold text-slate-700">{transfer.destination_sector?.name}</span>
+                                    <div className="flex flex-col">
+                                        <span className="font-bold text-slate-700">{transfer.destination_sector?.name}</span>
+                                        {transfer.destination_room && (
+                                            <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg w-fit">
+                                                Habitación {transfer.destination_room}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
