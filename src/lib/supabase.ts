@@ -90,6 +90,22 @@ export type Database = {
           completed_at?: string | null;
         };
       };
+      access_codes: {
+        Row: {
+          id: string;
+          role_name: string;
+          sector_id: string | null;
+          code: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          role_name: string;
+          sector_id?: string | null;
+          code: string;
+          created_at?: string;
+        };
+      };
     };
   };
 };

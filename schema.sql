@@ -65,6 +65,27 @@ VALUES ('Camilla'),
 ALTER TABLE sectors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transfer_types ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transfers ENABLE ROW LEVEL SECURITY;
+-- 4. Tabla de Códigos de Acceso (Seguridad por PIN)
+CREATE TABLE IF NOT EXISTS access_codes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  role_name TEXT NOT NULL,
+  sector_id UUID REFERENCES sectors(id),
+  code TEXT NOT NULL,
+  -- PIN de 4 dígitos
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- Insertar códigos por defecto para la presentación
+-- Nota: En producción estos se manejarían desde un panel de admin
+INSERT INTO access_codes (role_name, code)
+VALUES ('admin', '1234'),
+  ('camillero', '5555'),
+  ('imagenes', '8888') ON CONFLICT DO NOTHING;
+-- Códigos para sectores específicos (opcional, si no existe el sector_id específico, usa el rol 'sector')
+INSERT INTO access_codes (role_name, code)
+VALUES ('sector', '0000') ON CONFLICT DO NOTHING;
+ALTER TABLE access_codes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Lectura pública de códigos para login" ON access_codes FOR
+SELECT TO anon USING (true);
 -- 2. Políticas para Sectores (Lectura pública para usuarios anónimos)
 CREATE POLICY "Lectura pública de sectores" ON sectors FOR
 SELECT TO anon USING (true);

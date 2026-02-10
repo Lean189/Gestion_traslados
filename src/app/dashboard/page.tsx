@@ -27,6 +27,7 @@ export default function Dashboard() {
     const [role, setRole] = useState<string | null>(null);
     const [transfers, setTransfers] = useState<TransferJoined[]>([]);
     const [loading, setLoading] = useState(true);
+    // ... rest of state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTransfer, setSelectedTransfer] = useState<TransferJoined | null>(null);
     const [activeTab, setActiveTab] = useState<'live' | 'history' | 'stats'>('live');
@@ -34,10 +35,19 @@ export default function Dashboard() {
     const [filterStatus, setFilterStatus] = useState("TODOS");
     const [filterDate, setFilterDate] = useState("");
     const [transferToEdit, setTransferToEdit] = useState<TransferJoined | null>(null);
-
     const [error, setError] = useState<string | null>(null);
 
+    const playNotificationSound = () => {
+        try {
+            const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+            audio.play().catch(() => console.log("Audio play blocked by browser. Need user interaction first."));
+        } catch {
+            // Unused err removed
+        }
+    };
+
     const fetchTransfers = useCallback(async () => {
+        // ... (fetch logic remains same)
         try {
             const { data, error: dbError } = await supabase
                 .from('transfers')
@@ -66,6 +76,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         const savedRole = localStorage.getItem("userRole");
+
         if (!savedRole) {
             window.location.href = "/";
         } else {
@@ -77,7 +88,12 @@ export default function Dashboard() {
                 .on(
                     'postgres_changes',
                     { event: '*', schema: 'public', table: 'transfers' },
-                    () => fetchTransfers()
+                    (payload) => {
+                        if (payload.eventType === 'INSERT') {
+                            playNotificationSound();
+                        }
+                        fetchTransfers();
+                    }
                 )
                 .subscribe();
 
@@ -87,9 +103,38 @@ export default function Dashboard() {
         }
     }, [fetchTransfers]);
 
+    const exportToCSV = () => {
+        if (transfers.length === 0) return;
+
+        const headers = ["ID", "Paciente", "DNI", "Origen", "Destino", "Tipo", "Estado", "Prioridad", "Fecha Solicitud", "Aceptado", "Completado"];
+        const rows = transfers.map(t => [
+            t.id,
+            t.patient_name,
+            t.patient_history_number || "",
+            t.origin_sector?.name || "",
+            t.destination_sector?.name || "",
+            t.transfer_type?.name || "",
+            t.status,
+            t.priority,
+            new Date(t.requested_at).toLocaleString(),
+            t.accepted_at ? new Date(t.accepted_at).toLocaleString() : "",
+            t.completed_at ? new Date(t.completed_at).toLocaleString() : ""
+        ]);
+
+        const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `reporte_traslados_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const updateStatus = async (id: string, nextStatus: string) => {
+        // ... (existing updateStatus logic)
         try {
-            // 1. Obtener el estado actual del traslado antes de actualizar
             const { data: current, error: fetchError } = await supabase
                 .from('transfers')
                 .select('status')
@@ -101,10 +146,9 @@ export default function Dashboard() {
                 return;
             }
 
-            // 2. Validaciones de flujo lógico
             if (nextStatus === 'EN_CURSO' && current.status !== 'PENDIENTE') {
                 alert("Este traslado ya no está disponible (fue tomado por otro camillero o cancelado).");
-                fetchTransfers(); // Refrescar lista
+                fetchTransfers();
                 return;
             }
 
@@ -114,7 +158,6 @@ export default function Dashboard() {
                 return;
             }
 
-            // 3. Preparar datos de actualización
             const updateData: {
                 status: string;
                 accepted_at?: string;
@@ -124,18 +167,15 @@ export default function Dashboard() {
             if (nextStatus === 'EN_CURSO') updateData.accepted_at = new Date().toISOString();
             if (nextStatus === 'COMPLETADO') updateData.completed_at = new Date().toISOString();
 
-            // 4. Realizar la actualización con un check adicional de seguridad (mismo estado que leímos)
             const { error: updateError } = await supabase
                 .from('transfers')
                 .update(updateData)
                 .eq('id', id)
-                .eq('status', current.status); // Check atómico: solo actualiza si el estado no cambió en el milisegundo intermedio
+                .eq('status', current.status);
 
             if (updateError) {
                 alert("No se pudo actualizar: " + updateError.message);
             } else {
-                // Éxito: el realtime channel se encargará de refrescar la UI, 
-                // pero forzamos un fetch para estar seguros en conexiones lentas.
                 fetchTransfers();
             }
         } catch (err) {
@@ -470,6 +510,14 @@ export default function Dashboard() {
                                 value={filterDate}
                                 onChange={(e) => setFilterDate(e.target.value)}
                             />
+                            <button
+                                onClick={exportToCSV}
+                                className="p-3 px-5 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold transition-all border border-emerald-100 flex items-center gap-2"
+                                title="Descargar Excel"
+                            >
+                                <ArrowRightLeft size={18} className="rotate-90" />
+                                Exportar
+                            </button>
                             {(searchQuery || filterStatus !== "TODOS" || filterDate) && (
                                 <button
                                     onClick={() => {
