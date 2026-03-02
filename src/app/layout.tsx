@@ -13,9 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sistema de Gestión de Traslados - Sanatorio San José",
-  description: "Plataforma de gestión de traslados de pacientes en tiempo real para el Sector Imágenes y áreas críticas.",
+  title: "Sistema de Gestión de Traslados",
+  description: "Plataforma de gestión de traslados de pacientes en tiempo real para sectores y áreas críticas.",
 };
+
+import { Toaster } from "sonner";
 
 export default function RootLayout({
   children,
@@ -23,10 +25,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="es">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <Toaster position="top-right" richColors />
         {children}
       </body>
     </html>

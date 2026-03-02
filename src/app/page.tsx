@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { supabase, Sector } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
 import {
-  ClipboardList,
   Truck,
   Stethoscope,
   ChevronRight,
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 export default function LoginPage() {
+  const { loginSuccess } = useAuth();
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
@@ -21,9 +22,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   const roles = [
-    { id: "sector", name: "Sectores / Pisos", icon: Stethoscope, color: "text-blue-500", bg: "bg-blue-50" },
+    { id: "sector", name: "Sectores / Pisos / Imágenes", icon: Stethoscope, color: "text-blue-500", bg: "bg-blue-50" },
     { id: "camillero", name: "Camilleros", icon: Truck, color: "text-emerald-500", bg: "bg-emerald-50" },
-    { id: "imagenes", name: "Imágenes", icon: ClipboardList, color: "text-purple-500", bg: "bg-purple-50" },
     { id: "admin", name: "Administración / Control", icon: Lock, color: "text-red-500", bg: "bg-red-50" },
   ];
 
@@ -48,7 +48,6 @@ export default function LoginPage() {
       const query = supabase.from('access_codes').select('*');
 
       if (selectedRole === 'sector') {
-        // Buscamos código específico del sector o bien el genérico de rol 'sector'
         const { data: specificCode } = await query
           .eq('sector_id', selectedSectorId)
           .eq('code', pin)
@@ -59,7 +58,6 @@ export default function LoginPage() {
           return;
         }
 
-        // Si no hay específico, buscamos el genérico del rol
         const { data: genericCode } = await supabase
           .from('access_codes')
           .select('*')
@@ -73,7 +71,6 @@ export default function LoginPage() {
           setError("PIN incorrecto para este sector.");
         }
       } else {
-        // Para admin, camillero, imagenes
         const { data: codeData } = await query
           .eq('role_name', selectedRole)
           .eq('code', pin)
@@ -92,12 +89,6 @@ export default function LoginPage() {
     }
   };
 
-  const loginSuccess = (role: string, sectorId: string | null = null) => {
-    localStorage.setItem("userRole", role);
-    if (sectorId) localStorage.setItem("userSectorId", sectorId);
-    window.location.href = "/dashboard";
-  };
-
   const handleRoleSelect = (roleId: string) => {
     setSelectedRole(roleId);
     if (roleId !== 'sector') {
@@ -109,11 +100,10 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#f8fafc]">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600 text-white shadow-xl shadow-blue-500/20 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600 text-white shadow-xl shadow-blue-500/20 mb-4 font-bold">
             <ArrowRightLeft size={32} />
           </div>
           <h1 className="text-3xl font-bold text-slate-900">Gestión de Traslados</h1>
-          <p className="text-slate-500 mt-2 text-lg italic tracking-tight font-medium">Sanatorio San José</p>
         </div>
 
         <div className="bg-white rounded-[2.5rem] p-8 card-shadow border border-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-500">

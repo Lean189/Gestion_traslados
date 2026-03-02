@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase, Sector, TransferType, TransferJoined } from "@/lib/supabase";
 import { X, Send, AlertCircle, ChevronDown } from "lucide-react";
+import { toast } from "sonner";
 
 export default function TransferForm({
     onClose,
@@ -151,7 +152,7 @@ export default function TransferForm({
                                 type="text"
                                 maxLength={100}
                                 placeholder="Nombre completo"
-                                className="input-field"
+                                className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-slate-950 font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
                                 value={formData.patient_name}
                                 onChange={(e) => setFormData({ ...formData, patient_name: e.target.value })}
                             />
@@ -171,7 +172,7 @@ export default function TransferForm({
                                                 origin_sector_id: sectors.find(s => s.name.includes("Piso 3"))?.id || ""
                                             });
                                             setLoading(false);
-                                            alert("Simulación: Datos recuperados del Sistema HIS (Sanatorio v2.0)");
+                                            toast.success("Datos recuperados del Sistema HIS (Sanatorio v2.0)");
                                         }, 800);
                                     }}
                                     className="text-[10px] bg-blue-600 text-white px-2 py-1 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-1 font-black uppercase tracking-tighter shadow-sm"
@@ -183,7 +184,7 @@ export default function TransferForm({
                                 required
                                 type="text"
                                 placeholder="Ej: 35.123.456"
-                                className="input-field"
+                                className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-slate-950 font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
                                 value={formData.patient_history_number}
                                 onChange={(e) => setFormData({ ...formData, patient_history_number: e.target.value })}
                             />
@@ -198,7 +199,7 @@ export default function TransferForm({
                                 <div className="relative">
                                     <select
                                         required
-                                        className="input-field appearance-none"
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-slate-950 font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all appearance-none"
                                         value={formData.origin_sector_id}
                                         onChange={(e) => setFormData({ ...formData, origin_sector_id: e.target.value, patient_room: "" })}
                                     >
@@ -214,7 +215,7 @@ export default function TransferForm({
                                     <div className="relative">
                                         <select
                                             required
-                                            className="input-field appearance-none"
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-slate-950 font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all appearance-none"
                                             value={formData.patient_room}
                                             onChange={(e) => setFormData({ ...formData, patient_room: e.target.value })}
                                         >
@@ -234,7 +235,7 @@ export default function TransferForm({
                                 <div className="relative">
                                     <select
                                         required
-                                        className="input-field appearance-none"
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-slate-950 font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all appearance-none"
                                         value={formData.destination_sector_id}
                                         onChange={(e) => setFormData({ ...formData, destination_sector_id: e.target.value, destination_room: "" })}
                                     >
@@ -250,7 +251,7 @@ export default function TransferForm({
                                     <div className="relative">
                                         <select
                                             required
-                                            className="input-field appearance-none"
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-slate-950 font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all appearance-none"
                                             value={formData.destination_room}
                                             onChange={(e) => setFormData({ ...formData, destination_room: e.target.value })}
                                         >
@@ -286,7 +287,7 @@ export default function TransferForm({
                     <div>
                         <label className="block text-sm font-bold text-slate-700 mb-2">Observaciones</label>
                         <textarea
-                            className="input-field min-h-[100px] resize-none"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-slate-950 font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 min-h-[100px] resize-none"
                             placeholder="Ej: Requiere oxígeno..."
                             value={formData.observation}
                             onChange={(e) => setFormData({ ...formData, observation: e.target.value })}
@@ -297,7 +298,7 @@ export default function TransferForm({
                         <button
                             disabled={loading || !formData.transfer_type_id}
                             type="submit"
-                            className="btn-primary w-full py-5 flex items-center justify-center gap-3 text-lg rounded-2xl shadow-blue-500/25 disabled:opacity-50"
+                            className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-semibold transition-all hover:bg-blue-700 active:scale-95 shadow-lg shadow-blue-500/25 disabled:opacity-50 w-full py-5 flex items-center justify-center gap-3 text-lg"
                         >
                             {loading ? "Procesando..." : (
                                 <>
