@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 export default function LoginPage() {
-  const { loginSuccess } = useAuth();
+  const { loginSuccess, isReady } = useAuth();
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
@@ -95,6 +95,14 @@ export default function LoginPage() {
       setStep(2);
     }
   };
+
+  if (!isReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#f8fafc]">

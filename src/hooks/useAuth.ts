@@ -17,18 +17,25 @@ export function useAuth() {
         return null;
     });
 
-    // isReady is true if we already have a role (and we are on client)
-    const [isReady] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return !!localStorage.getItem("userRole");
-        }
-        return false;
-    });
+    const [isReady, setIsReady] = useState(false);
 
     useEffect(() => {
-        if (!role && typeof window !== 'undefined') {
-            window.location.href = "/";
-        }
+        const checkSession = async () => {
+            if (typeof window === 'undefined') return;
+
+            const isLoginPage = window.location.pathname === "/";
+            const currentRole = localStorage.getItem("userRole");
+
+            if (!currentRole && !isLoginPage) {
+                window.location.href = "/";
+            } else if (currentRole && isLoginPage) {
+                window.location.href = "/dashboard";
+            } else {
+                setIsReady(true);
+            }
+        };
+
+        checkSession();
     }, [role]);
 
     const logout = useCallback(() => {
