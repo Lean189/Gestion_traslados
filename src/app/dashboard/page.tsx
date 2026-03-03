@@ -16,6 +16,8 @@ import { HistoryTab } from "@/components/dashboard/HistoryTab";
 import { StatsTab } from "@/components/dashboard/StatsTab";
 import TransferForm from "@/components/TransferForm";
 import TransferDetailsModal from "@/components/TransferDetailsModal";
+import StatusModal from "@/components/ui/StatusModal";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 export const dynamic = 'force-dynamic';
 
@@ -36,34 +38,66 @@ export default function Dashboard() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTransfer, setSelectedTransfer] = useState<TransferJoined | null>(null);
     const [transferToEdit, setTransferToEdit] = useState<TransferJoined | null>(null);
+    const [statusModal, setStatusModal] = useState<{
+        isOpen: boolean;
+        type: 'input' | 'confirm';
+        title: string;
+        description: string;
+        confirmText: string;
+        onConfirm: (val: string) => void;
+    }>({
+        isOpen: false,
+        type: 'input',
+        title: '',
+        description: '',
+        confirmText: '',
+        onConfirm: () => { }
+    });
 
-    const handleUpdateStatus = async (id: string, nextStatus: string) => {
-        let transporterName = undefined;
+    const handleUpdateStatus = (id: string, nextStatus: string) => {
         if (nextStatus === 'EN_CURSO') {
-            const name = prompt("Por favor, ingresa tu nombre para aceptar el traslado:");
-            if (!name || name.trim() === "") {
-                alert("Es necesario ingresar un nombre para el registro equitativo del trabajo.");
-                return;
-            }
-            transporterName = name;
-        }
-        await updateStatus(id, nextStatus, transporterName);
-    };
-
-    const handleCancel = async (transfer: TransferJoined) => {
-        const reason = prompt("Ingrese el motivo de la cancelación:");
-        if (reason === null) return;
-        if (!reason.trim()) {
-            alert("Debe ingresar un motivo para cancelar.");
+            setStatusModal({
+                isOpen: true,
+                type: 'input',
+                title: 'Aceptar Traslado',
+                description: 'Por favor, ingresa tu nombre para aceptar el traslado y llevar un registro equitativo.',
+                confirmText: 'Aceptar',
+                onConfirm: (name) => {
+                    updateStatus(id, nextStatus, name);
+                    setStatusModal(prev => ({ ...prev, isOpen: false }));
+                }
+            });
             return;
         }
-        await cancelTransfer(transfer.id, reason, transfer.observation);
+        updateStatus(id, nextStatus);
     };
 
-    const handleDelete = async (id: string) => {
-        if (confirm("¿Estás seguro de que deseas eliminar este traslado?")) {
-            await deleteTransfer(id);
-        }
+    const handleCancel = (transfer: TransferJoined) => {
+        setStatusModal({
+            isOpen: true,
+            type: 'input',
+            title: 'Cancelar Traslado',
+            description: 'Indica el motivo de la cancelación para informar al sector de origen.',
+            confirmText: 'Confirmar Cancelación',
+            onConfirm: (reason) => {
+                cancelTransfer(transfer.id, reason, transfer.observation);
+                setStatusModal(prev => ({ ...prev, isOpen: false }));
+            }
+        });
+    };
+
+    const handleDelete = (id: string) => {
+        setStatusModal({
+            isOpen: true,
+            type: 'confirm',
+            title: '¿Eliminar Traslado?',
+            description: 'Esta acción no se puede deshacer. El traslado desaparecerá del historial.',
+            confirmText: 'Eliminar',
+            onConfirm: () => {
+                deleteTransfer(id);
+                setStatusModal(prev => ({ ...prev, isOpen: false }));
+            }
+        });
     };
 
     if (!isReady || (loading && transfers.length === 0)) {
@@ -201,6 +235,16 @@ export default function Dashboard() {
                     onClose={() => setSelectedTransfer(null)}
                 />
             )}
+
+            <StatusModal
+                isOpen={statusModal.isOpen}
+                type={statusModal.type}
+                title={statusModal.title}
+                description={statusModal.description}
+                confirmText={statusModal.confirmText}
+                onClose={() => setStatusModal(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={statusModal.onConfirm}
+            />
 
             {/* FAB for mobile (sector role) */}
             {(role === 'sector') && (

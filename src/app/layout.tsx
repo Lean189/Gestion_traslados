@@ -13,8 +13,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sistema de Gestión de Traslados",
-  description: "Plataforma de gestión de traslados de pacientes en tiempo real para sectores y áreas críticas.",
+  title: "SGT - Sistema de Gestión de Traslados",
+  description: "Plataforma optimizada para la logística interna hospitalaria. Gestión de traslados de pacientes en tiempo real para sectores y áreas críticas.",
+  keywords: ["gestión hospitalaria", "traslado de pacientes", "logística interna", "sanatorio", "salud"],
+  authors: [{ name: "SGT Team" }],
+  openGraph: {
+    title: "SGT - Sistema de Gestión de Traslados",
+    description: "Optimización de la logística interna y traslados de pacientes.",
+    type: "website",
+  },
 };
 
 import { Toaster } from "sonner";

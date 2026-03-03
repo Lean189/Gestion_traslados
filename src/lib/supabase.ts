@@ -4,17 +4,14 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  const errorMsg = 'CRITICAL: Supabase environment variables are missing. Check your .env.local file.';
-  console.error(errorMsg);
-  // We throw if we're on the server during build, or just warn on client to avoid crashing the whole app immediately
-  if (typeof window === 'undefined') {
-    // throw new Error(errorMsg); // Optional: keep it as warning to not break local dev if they don't use it
+  if (typeof window !== 'undefined') {
+    console.error('Supabase environment variables are missing.');
   }
 }
 
 export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder',
+  supabaseUrl || '',
+  supabaseAnonKey || '',
   {
     auth: {
       persistSession: true,
