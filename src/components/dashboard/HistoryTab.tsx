@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus, User, MapPin, Calendar, Clock, X, ArrowRightLeft } from "lucide-react";
 import { TransferJoined } from "@/lib/supabase";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 
 interface HistoryTabProps {
     transfers: TransferJoined[];
@@ -51,16 +52,6 @@ export function HistoryTab({ transfers, onDetails }: HistoryTabProps) {
         const matchDate = !filterDate || new Date(t.requested_at).toISOString().split('T')[0] === filterDate;
         return matchSearch && matchStatus && matchDate;
     });
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'PENDIENTE': return <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-700">Pendiente</span>;
-            case 'EN_CURSO': return <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-100 text-blue-700">En Curso</span>;
-            case 'COMPLETADO': return <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700">Completado</span>;
-            case 'CANCELADO': return <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-red-100 text-red-700">Cancelado</span>;
-            default: return <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-slate-100 text-slate-700">{status}</span>;
-        }
-    };
 
     return (
         <div className="space-y-6">
@@ -126,7 +117,7 @@ export function HistoryTab({ transfers, onDetails }: HistoryTabProps) {
                                         {transfer.patient_history_number && (
                                             <span className="text-xs font-semibold text-slate-400">DNI: {transfer.patient_history_number}</span>
                                         )}
-                                        {getStatusBadge(transfer.status)}
+                                        <StatusBadge status={transfer.status} />
                                     </div>
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
                                         <span className="flex items-center gap-1">

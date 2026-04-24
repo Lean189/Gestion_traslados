@@ -19,7 +19,8 @@ export function useTransfers() {
           destination_sector:sectors!destination_sector_id(name),
           transfer_type:transfer_types!transfer_type_id(name)
         `)
-                .order('requested_at', { ascending: false });
+                .order('requested_at', { ascending: false })
+                .limit(200);
 
             if (dbError) {
                 console.error("Database error:", dbError);
@@ -40,7 +41,7 @@ export function useTransfers() {
 
     const playNotificationSound = useCallback(() => {
         try {
-            const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+            const audio = new Audio("/sounds/notification.mp3");
             audio.play().catch(() => console.log("Audio play blocked by browser."));
         } catch (err) {
             console.error("Audio error:", err);
@@ -115,7 +116,6 @@ export function useTransfers() {
             }
 
             toast.success(`Traslado actualizado a ${nextStatus.replace('_', ' ')}`);
-            fetchTransfers();
             return true;
         } catch {
             toast.error("Error inesperado al actualizar");
@@ -124,42 +124,50 @@ export function useTransfers() {
     };
 
     const deleteTransfer = async (id: string) => {
-        const { error } = await supabase
-            .from('transfers')
-            .delete()
-            .eq('id', id);
+        try {
+            const { error } = await supabase
+                .from('transfers')
+                .delete()
+                .eq('id', id);
 
-        if (error) {
-            toast.error("Error al eliminar: " + error.message);
+            if (error) {
+                toast.error("Error al eliminar: " + error.message);
+                return false;
+            }
+
+            toast.success("Traslado eliminado");
+            return true;
+        } catch {
+            toast.error("Error inesperado al eliminar");
             return false;
         }
-
-        toast.success("Traslado eliminado");
-        fetchTransfers();
-        return true;
     };
 
     const cancelTransfer = async (id: string, reason: string, currentObservation: string | null) => {
-        const newObservation = currentObservation
-            ? `${currentObservation}\n\nMOTIVO CANCELACIÓN: ${reason}`
-            : `MOTIVO CANCELACIÓN: ${reason}`;
+        try {
+            const newObservation = currentObservation
+                ? `${currentObservation}\n\nMOTIVO CANCELACIÓN: ${reason}`
+                : `MOTIVO CANCELACIÓN: ${reason}`;
 
-        const { error } = await supabase
-            .from('transfers')
-            .update({
-                status: 'CANCELADO',
-                observation: newObservation
-            })
-            .eq('id', id);
+            const { error } = await supabase
+                .from('transfers')
+                .update({
+                    status: 'CANCELADO',
+                    observation: newObservation
+                })
+                .eq('id', id);
 
-        if (error) {
-            toast.error("Error al cancelar: " + error.message);
+            if (error) {
+                toast.error("Error al cancelar: " + error.message);
+                return false;
+            }
+
+            toast.success("Traslado cancelado");
+            return true;
+        } catch {
+            toast.error("Error inesperado al cancelar");
             return false;
         }
-
-        toast.success("Traslado cancelado");
-        fetchTransfers();
-        return true;
     };
 
     return {

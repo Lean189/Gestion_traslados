@@ -27,11 +27,12 @@ export default function TransferForm({
         transfer_type_id: editData?.transfer_type_id || "",
         patient_room: editData?.patient_room || "",
         destination_room: editData?.destination_room || "",
-        observation: editData?.observation || ""
+        observation: editData?.observation || "",
+        priority: editData?.priority || "MEDIA"
     });
 
     const fetchData = useCallback(async () => {
-        const { data: sectorsData } = await supabase.from('sectors').select('id, name').order('name');
+        const { data: sectorsData } = await supabase.from('sectors').select('id, name, room_config').order('name');
         const { data: typesData } = await supabase.from('transfer_types').select('id, name').order('name');
         setSectors(sectorsData as Sector[] || []);
         setTypes(typesData as TransferType[] || []);
@@ -47,6 +48,11 @@ export default function TransferForm({
     const getAvailableRooms = useCallback((sectorId: string) => {
         const sector = sectors.find(s => s.id === sectorId);
         if (!sector) return [];
+
+        if (sector.room_config && Array.isArray(sector.room_config)) {
+            return sector.room_config as string[];
+        }
+
         const name = sector.name.toLowerCase();
 
         if (name.includes("guardia")) {
@@ -88,8 +94,7 @@ export default function TransferForm({
             ...formData,
             patient_history_number: formData.patient_history_number || null,
             patient_room: formData.patient_room || null,
-            destination_room: formData.destination_room || null,
-            priority: 'MEDIA'
+            destination_room: formData.destination_room || null
         };
 
         if (editData?.id) {
@@ -160,25 +165,6 @@ export default function TransferForm({
                         <div className="col-span-full">
                             <label className="block text-sm font-bold text-slate-700 mb-2 flex justify-between items-center">
                                 DNI del Paciente *
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setLoading(true);
-                                        setTimeout(() => {
-                                            setFormData({
-                                                ...formData,
-                                                patient_name: "GARCIA, MARIA ELENA",
-                                                patient_room: "304",
-                                                origin_sector_id: sectors.find(s => s.name.includes("Piso 3"))?.id || ""
-                                            });
-                                            setLoading(false);
-                                            toast.success("Datos recuperados del Sistema HIS (Sanatorio v2.0)");
-                                        }, 800);
-                                    }}
-                                    className="text-[10px] bg-blue-600 text-white px-2 py-1 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-1 font-black uppercase tracking-tighter shadow-sm"
-                                >
-                                    <AlertCircle size={10} /> Conectar HIS
-                                </button>
                             </label>
                             <input
                                 required
@@ -265,22 +251,44 @@ export default function TransferForm({
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-3">Tipo de Traslado *</label>
-                        <div className="grid grid-cols-2 gap-3">
-                            {types.map(t => (
-                                <button
-                                    key={t.id}
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, transfer_type_id: t.id })}
-                                    className={`px-4 py-4 rounded-2xl text-sm font-bold transition-all border-2 flex flex-col items-center justify-center gap-2 ${formData.transfer_type_id === t.id
-                                        ? "bg-blue-50 border-blue-500 text-blue-700 shadow-sm"
-                                        : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-3">Prioridad *</label>
+                            <div className="grid grid-cols-2 gap-3">
+                                {(['BAJA', 'MEDIA', 'ALTA', 'URGENTE'] as const).map(p => (
+                                    <button
+                                        key={p}
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, priority: p })}
+                                        className={`px-4 py-4 rounded-2xl text-sm font-bold transition-all border-2 flex flex-col items-center justify-center gap-2 ${
+                                            formData.priority === p
+                                                ? p === 'URGENTE' ? 'bg-red-50 border-red-500 text-red-700 shadow-sm' : 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm'
+                                                : 'bg-white border-slate-100 text-slate-500 hover:border-slate-200'
                                         }`}
-                                >
-                                    {t.name}
-                                </button>
-                            ))}
+                                    >
+                                        {p}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-3">Tipo de Traslado *</label>
+                            <div className="grid grid-cols-2 gap-3">
+                                {types.map(t => (
+                                    <button
+                                        key={t.id}
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, transfer_type_id: t.id })}
+                                        className={`px-4 py-4 rounded-2xl text-sm font-bold transition-all border-2 flex flex-col items-center justify-center gap-2 ${formData.transfer_type_id === t.id
+                                            ? "bg-blue-50 border-blue-500 text-blue-700 shadow-sm"
+                                            : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
+                                            }`}
+                                    >
+                                        {t.name}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
 

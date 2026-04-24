@@ -30,7 +30,7 @@ export default function LoginPage() {
   useEffect(() => {
     async function fetchSectors() {
       const { data } = await supabase.from('sectors').select('id, name').order('name');
-      setSectors(data || []);
+      setSectors((data as unknown as Sector[]) || []);
     }
     fetchSectors();
   }, []);
@@ -45,42 +45,27 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const query = supabase.from('access_codes').select('*');
+      // 1. Iniciar sesión anónima en Supabase
+      const { error: authError } = await supabase.auth.signInAnonymously();
+      
+      if (authError) {
+         setError("Error de conexión. Verifica que el acceso anónimo esté habilitado en Supabase.");
+         setLoading(false);
+         return;
+      }
 
-      if (selectedRole === 'sector') {
-        const { data: specificCode } = await query
-          .eq('sector_id', selectedSectorId)
-          .eq('code', pin)
-          .maybeSingle();
+      // 2. Llamar al RPC seguro para validar el PIN y vincular la sesión
+      const { data: isValid, error: rpcError } = await supabase.rpc('login_with_pin', {
+         p_role: selectedRole,
+         p_pin: pin,
+         p_sector_id: selectedRole === 'sector' ? selectedSectorId : null
+      });
 
-        if (specificCode) {
-          loginSuccess('sector', selectedSectorId);
-          return;
-        }
-
-        const { data: genericCode } = await supabase
-          .from('access_codes')
-          .select('*')
-          .eq('role_name', 'sector')
-          .eq('code', pin)
-          .maybeSingle();
-
-        if (genericCode) {
-          loginSuccess('sector', selectedSectorId);
-        } else {
-          setError("PIN incorrecto para este sector.");
-        }
+      if (rpcError || !isValid) {
+         await supabase.auth.signOut();
+         setError("PIN incorrecto o acceso denegado.");
       } else {
-        const { data: codeData } = await query
-          .eq('role_name', selectedRole)
-          .eq('code', pin)
-          .maybeSingle();
-
-        if (codeData) {
-          loginSuccess(selectedRole!);
-        } else {
-          setError("PIN incorrecto para " + roles.find(r => r.id === selectedRole)?.name);
-        }
+         loginSuccess();
       }
     } catch {
       setError("Error al validar el código.");

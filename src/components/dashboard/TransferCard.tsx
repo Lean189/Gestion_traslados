@@ -11,6 +11,7 @@ import {
     QrCode
 } from "lucide-react";
 import { TransferJoined } from "@/lib/supabase";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 
 interface TransferCardProps {
     transfer: TransferJoined;
@@ -32,16 +33,6 @@ export function TransferCard({
     onDetails,
 }: TransferCardProps) {
 
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'PENDIENTE': return <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-700">Pendiente</span>;
-            case 'EN_CURSO': return <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-100 text-blue-700">En Curso</span>;
-            case 'COMPLETADO': return <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700">Completado</span>;
-            case 'CANCELADO': return <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-red-100 text-red-700">Cancelado</span>;
-            default: return <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-slate-100 text-slate-700">{status}</span>;
-        }
-    };
-
     return (
         <div className="bg-white p-5 rounded-3xl card-shadow border border-slate-100 hover:border-blue-100 transition-all group">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -57,7 +48,7 @@ export function TransferCard({
                                     DNI: {transfer.patient_history_number}
                                 </span>
                             )}
-                            {getStatusBadge(transfer.status)}
+                            <StatusBadge status={transfer.status} />
                             {transfer.priority === 'URGENTE' && <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-red-100 text-red-600">Urgente</span>}
                         </div>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500 font-medium">
@@ -112,13 +103,15 @@ export function TransferCard({
                         Detalles
                     </button>
 
-                    <button
-                        onClick={() => onEdit(transfer)}
-                        className="p-3 rounded-xl hover:bg-blue-50 text-blue-400 hover:text-blue-600 transition-all border border-slate-100 flex-1 lg:flex-none justify-center flex items-center"
-                        title="Editar"
-                    >
-                        <Edit2 size={18} />
-                    </button>
+                    {(role === 'admin' || role === 'sector') && (
+                        <button
+                            onClick={() => onEdit(transfer)}
+                            className="p-3 rounded-xl hover:bg-blue-50 text-blue-400 hover:text-blue-600 transition-all border border-slate-100 flex-1 lg:flex-none justify-center flex items-center"
+                            title="Editar"
+                        >
+                            <Edit2 size={18} />
+                        </button>
+                    )}
                     {role === 'admin' && (
                         <button
                             onClick={() => onDelete(transfer.id)}

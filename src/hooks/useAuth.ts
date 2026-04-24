@@ -1,22 +1,11 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 export function useAuth() {
-    const [role] = useState<string | null>(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem("userRole");
-        }
-        return null;
-    });
-
-    const [sectorId] = useState<string | null>(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem("userSectorId");
-        }
-        return null;
-    });
-
+    const [role, setRole] = useState<string | null>(null);
+    const [sectorId, setSectorId] = useState<string | null>(null);
     const [isReady, setIsReady] = useState(false);
 
     useEffect(() => {
@@ -24,11 +13,34 @@ export function useAuth() {
             if (typeof window === 'undefined') return;
 
             const isLoginPage = window.location.pathname === "/";
-            const currentRole = localStorage.getItem("userRole");
+            
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (!session) {
+                if (!isLoginPage) window.location.href = "/";
+                else setIsReady(true);
+                return;
+            }
 
-            if (!currentRole && !isLoginPage) {
-                window.location.href = "/";
-            } else if (currentRole && isLoginPage) {
+            // User is signed in. Check their role in active_sessions
+            const { data: sessionData, error } = await supabase
+                .from('active_sessions')
+                .select('role_name, sector_id')
+                .eq('user_id', session.user.id)
+                .single();
+
+            if (error || !sessionData) {
+                // Invalid or missing session data
+                await supabase.auth.signOut();
+                if (!isLoginPage) window.location.href = "/";
+                else setIsReady(true);
+                return;
+            }
+
+            setRole(sessionData.role_name);
+            setSectorId(sessionData.sector_id);
+
+            if (isLoginPage) {
                 window.location.href = "/dashboard";
             } else {
                 setIsReady(true);
@@ -36,17 +48,14 @@ export function useAuth() {
         };
 
         checkSession();
-    }, [role]);
+    }, []);
 
-    const logout = useCallback(() => {
-        localStorage.removeItem("userRole");
-        localStorage.removeItem("userSectorId");
+    const logout = useCallback(async () => {
+        await supabase.auth.signOut();
         window.location.href = "/";
     }, []);
 
-    const loginSuccess = useCallback((userRole: string, userSectorId: string | null = null) => {
-        localStorage.setItem("userRole", userRole);
-        if (userSectorId) localStorage.setItem("userSectorId", userSectorId);
+    const loginSuccess = useCallback(() => {
         window.location.href = "/dashboard";
     }, []);
 

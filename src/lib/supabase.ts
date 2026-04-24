@@ -58,7 +58,7 @@ export type Database = {
           destination_sector_id: string;
           transfer_type_id: string;
           priority: 'BAJA' | 'MEDIA' | 'ALTA' | 'URGENTE';
-          status: 'PENDIENTE' | 'EN_ADJUDICACION' | 'EN_CURSO' | 'COMPLETADO' | 'CANCELADO';
+          status: 'PENDIENTE' | 'EN_CURSO' | 'COMPLETADO' | 'CANCELADO';
           requester_id: string | null;
           transporter_id: string | null;
           observation: string | null;
@@ -77,7 +77,7 @@ export type Database = {
           destination_sector_id: string;
           transfer_type_id: string;
           priority?: 'BAJA' | 'MEDIA' | 'ALTA' | 'URGENTE';
-          status?: 'PENDIENTE' | 'EN_ADJUDICACION' | 'EN_CURSO' | 'COMPLETADO' | 'CANCELADO';
+          status?: 'PENDIENTE' | 'EN_CURSO' | 'COMPLETADO' | 'CANCELADO';
           requester_id?: string | null;
           transporter_id?: string | null;
           observation?: string | null;
@@ -110,13 +110,33 @@ export type Database = {
 };
 
 export interface Sector {
-  id: string;
-  name: string;
+    id: string;
+    name: string;
+    active: boolean;
+    created_at: string;
+    room_config: string[] | null;
 }
 
 export interface TransferType {
+    id: string;
+    name: string;
+    active: boolean;
+    created_at: string;
+}
+
+export interface Transfer {
   id: string;
-  name: string;
+  patient_name: string;
+  patient_history_number: string | null;
+  origin_sector_id: string;
+  destination_sector_id: string;
+  transfer_type_id: string;
+  status: 'PENDIENTE' | 'EN_CURSO' | 'COMPLETADO' | 'CANCELADO';
+  observation: string | null;
+  transporter_name: string | null;
+  patient_room: string | null;
+  destination_room: string | null;
+  requested_at: string;
 }
 
 export interface TransferJoined {
@@ -127,7 +147,7 @@ export interface TransferJoined {
   destination_sector_id: string;
   transfer_type_id: string;
   priority: 'BAJA' | 'MEDIA' | 'ALTA' | 'URGENTE';
-  status: 'PENDIENTE' | 'EN_ADJUDICACION' | 'EN_CURSO' | 'COMPLETADO' | 'CANCELADO';
+  status: 'PENDIENTE' | 'EN_CURSO' | 'COMPLETADO' | 'CANCELADO';
   observation: string | null;
   transporter_name: string | null;
   patient_room: string | null;
