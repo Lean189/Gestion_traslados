@@ -2,22 +2,23 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { useRouter, usePathname } from "next/navigation";
 
 export function useAuth() {
+    const router = useRouter();
+    const pathname = usePathname();
     const [role, setRole] = useState<string | null>(null);
     const [sectorId, setSectorId] = useState<string | null>(null);
     const [isReady, setIsReady] = useState(false);
 
     useEffect(() => {
         const checkSession = async () => {
-            if (typeof window === 'undefined') return;
-
-            const isLoginPage = window.location.pathname === "/";
+            const isLoginPage = pathname === "/";
             
             const { data: { session } } = await supabase.auth.getSession();
             
             if (!session) {
-                if (!isLoginPage) window.location.href = "/";
+                if (!isLoginPage) router.replace("/");
                 else setIsReady(true);
                 return;
             }
@@ -29,10 +30,23 @@ export function useAuth() {
                 .eq('user_id', session.user.id)
                 .single();
 
-            if (error || !sessionData) {
-                // Invalid or missing session data
+            if (error) {
+                // PGRST116 = postgrest code for no rows returned.
+                // If the session row is missing, sign out. Otherwise, it might be a temporary network error.
+                if (error.code === 'PGRST116') {
+                    await supabase.auth.signOut();
+                    if (!isLoginPage) router.replace("/");
+                    else setIsReady(true);
+                } else {
+                    console.error("Error checking session (likely network loss):", error);
+                    setIsReady(true);
+                }
+                return;
+            }
+
+            if (!sessionData) {
                 await supabase.auth.signOut();
-                if (!isLoginPage) window.location.href = "/";
+                if (!isLoginPage) router.replace("/");
                 else setIsReady(true);
                 return;
             }
@@ -41,23 +55,28 @@ export function useAuth() {
             setSectorId(sessionData.sector_id);
 
             if (isLoginPage) {
-                window.location.href = "/dashboard";
+                router.replace("/dashboard");
             } else {
                 setIsReady(true);
             }
         };
 
         checkSession();
-    }, []);
+    }, [router, pathname]);
 
     const logout = useCallback(async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            // Limpiar tabla de sesiones activas antes de salir
+            await supabase.from('active_sessions').delete().eq('user_id', session.user.id);
+        }
         await supabase.auth.signOut();
-        window.location.href = "/";
-    }, []);
+        router.replace("/");
+    }, [router]);
 
     const loginSuccess = useCallback(() => {
-        window.location.href = "/dashboard";
-    }, []);
+        router.replace("/dashboard");
+    }, [router]);
 
     return {
         role,

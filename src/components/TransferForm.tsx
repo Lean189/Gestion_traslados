@@ -3,16 +3,19 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase, Sector, TransferType, TransferJoined } from "@/lib/supabase";
 import { X, Send, AlertCircle, ChevronDown } from "lucide-react";
-import { toast } from "sonner";
 
 export default function TransferForm({
     onClose,
     onSuccess,
-    editData
+    editData,
+    userRole,
+    userSectorId
 }: {
     onClose: () => void,
     onSuccess: () => void,
-    editData?: TransferJoined | null
+    editData?: TransferJoined | null,
+    userRole?: string | null,
+    userSectorId?: string | null
 }) {
     const [sectors, setSectors] = useState<Sector[]>([]);
     const [types, setTypes] = useState<TransferType[]>([]);
@@ -22,7 +25,7 @@ export default function TransferForm({
     const [formData, setFormData] = useState({
         patient_name: editData?.patient_name || "",
         patient_history_number: editData?.patient_history_number || "",
-        origin_sector_id: editData?.origin_sector_id || "",
+        origin_sector_id: editData?.origin_sector_id || (userRole === 'sector' && userSectorId ? userSectorId : ""),
         destination_sector_id: editData?.destination_sector_id || "",
         transfer_type_id: editData?.transfer_type_id || "",
         patient_room: editData?.patient_room || "",
@@ -164,10 +167,9 @@ export default function TransferForm({
                         </div>
                         <div className="col-span-full">
                             <label className="block text-sm font-bold text-slate-700 mb-2 flex justify-between items-center">
-                                DNI del Paciente *
+                                DNI del Paciente <span className="text-slate-400 font-normal text-xs">(Opcional)</span>
                             </label>
                             <input
-                                required
                                 type="text"
                                 placeholder="Ej: 35.123.456"
                                 className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-slate-950 font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
@@ -185,7 +187,8 @@ export default function TransferForm({
                                 <div className="relative">
                                     <select
                                         required
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-slate-950 font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all appearance-none"
+                                        disabled={userRole === 'sector' && !!userSectorId}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-slate-950 font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all appearance-none disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
                                         value={formData.origin_sector_id}
                                         onChange={(e) => setFormData({ ...formData, origin_sector_id: e.target.value, patient_room: "" })}
                                     >

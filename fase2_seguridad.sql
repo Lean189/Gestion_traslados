@@ -13,9 +13,14 @@ CREATE TABLE IF NOT EXISTS active_sessions (
 
 ALTER TABLE active_sessions ENABLE ROW LEVEL SECURITY;
 
+
 -- Los usuarios solo pueden ver su propia sesión
 CREATE POLICY "Lectura de propia sesion" ON active_sessions 
 FOR SELECT USING (user_id = auth.uid());
+
+-- Los usuarios pueden borrar su propia sesión al desloguearse
+CREATE POLICY "Borrado de propia sesion" ON active_sessions 
+FOR DELETE USING (user_id = auth.uid());
 
 
 -- 2. Función segura (RPC) para validar el PIN y crear la sesión

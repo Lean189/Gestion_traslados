@@ -7,7 +7,7 @@ ALTER TABLE sectors
 ADD COLUMN IF NOT EXISTS room_config JSONB;
 -- Ejemplo opcional de cómo asignar habitaciones (puedes ejecutarlo para probar):
 UPDATE sectors
-SET room_config = '["121", "122", "123", "124", "125" , "126", "127", "2" , "3" , "4" , "5" , "6" , "7" , "8" , "9", "10", ]'::jsonb
+SET room_config = '["121", "122", "123", "124", "125" , "126", "127", "2" , "3" , "4" , "5" , "6" , "7" , "8" , "9", "10"]'::jsonb
 WHERE name = 'Guardia';
 UPDATE sectors
 SET room_config = '["QX 1", "QX 2", "501", "502", "503", "504", "505", "506", "507", "508"]'::jsonb

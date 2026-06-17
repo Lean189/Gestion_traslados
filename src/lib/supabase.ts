@@ -29,12 +29,14 @@ export type Database = {
           name: string;
           description: string | null;
           created_at: string;
+          room_config: unknown;
         };
         Insert: {
           id?: string;
           name: string;
           description?: string | null;
           created_at?: string;
+          room_config?: unknown;
         };
       };
       transfer_types: {
@@ -112,7 +114,7 @@ export type Database = {
 export interface Sector {
     id: string;
     name: string;
-    active: boolean;
+    active?: boolean;
     created_at: string;
     room_config: string[] | null;
 }
@@ -120,7 +122,7 @@ export interface Sector {
 export interface TransferType {
     id: string;
     name: string;
-    active: boolean;
+    active?: boolean;
     created_at: string;
 }
 

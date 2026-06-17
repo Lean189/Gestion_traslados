@@ -1,17 +1,11 @@
 "use client";
 
 import { LogOut, ArrowRightLeft } from "lucide-react";
-import type { Metadata } from "next";
 
 interface HeaderProps {
     role: string | null;
     logout: () => void;
 }
-
-export const metadata: Metadata = {
-    title: "Sistema de Gestión de Traslados",
-    description: "Plataforma de gestión de traslados de pacientes en tiempo real para sectores y áreas críticas.",
-};
 
 export function Header({ role, logout }: HeaderProps) {
     return (

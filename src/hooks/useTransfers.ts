@@ -56,12 +56,46 @@ export function useTransfers() {
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'transfers' },
-                (payload) => {
+                async (payload) => {
                     if (payload.eventType === 'INSERT') {
                         playNotificationSound();
                         toast.info("Nueva solicitud recibida");
+                        
+                        const { data, error: fetchErr } = await supabase
+                            .from('transfers')
+                            .select(`
+                              *,
+                              origin_sector:sectors!origin_sector_id(name),
+                              destination_sector:sectors!destination_sector_id(name),
+                              transfer_type:transfer_types!transfer_type_id(name)
+                            `)
+                            .eq('id', payload.new.id)
+                            .single();
+                        
+                        if (!fetchErr && data) {
+                            setTransfers(prev => {
+                                if (prev.some(t => t.id === data.id)) return prev;
+                                return [data as unknown as TransferJoined, ...prev];
+                            });
+                        }
+                    } else if (payload.eventType === 'UPDATE') {
+                        const { data, error: fetchErr } = await supabase
+                            .from('transfers')
+                            .select(`
+                              *,
+                              origin_sector:sectors!origin_sector_id(name),
+                              destination_sector:sectors!destination_sector_id(name),
+                              transfer_type:transfer_types!transfer_type_id(name)
+                            `)
+                            .eq('id', payload.new.id)
+                            .single();
+                        
+                        if (!fetchErr && data) {
+                            setTransfers(prev => prev.map(t => t.id === data.id ? (data as unknown as TransferJoined) : t));
+                        }
+                    } else if (payload.eventType === 'DELETE') {
+                        setTransfers(prev => prev.filter(t => t.id !== payload.old.id));
                     }
-                    fetchTransfers();
                 }
             )
             .subscribe();

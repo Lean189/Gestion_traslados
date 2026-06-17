@@ -17,12 +17,11 @@ import { StatsTab } from "@/components/dashboard/StatsTab";
 import TransferForm from "@/components/TransferForm";
 import TransferDetailsModal from "@/components/TransferDetailsModal";
 import StatusModal from "@/components/ui/StatusModal";
-import { Skeleton } from "@/components/ui/Skeleton";
 
 export const dynamic = 'force-dynamic';
 
 export default function Dashboard() {
-    const { role, isReady, logout } = useAuth();
+    const { role, sectorId, isReady, logout } = useAuth();
     const {
         transfers,
         loading,
@@ -218,6 +217,8 @@ export default function Dashboard() {
                 <TransferForm
                     onClose={() => setIsModalOpen(false)}
                     onSuccess={fetchTransfers}
+                    userRole={role}
+                    userSectorId={sectorId}
                 />
             )}
 
@@ -226,6 +227,8 @@ export default function Dashboard() {
                     editData={transferToEdit}
                     onClose={() => setTransferToEdit(null)}
                     onSuccess={fetchTransfers}
+                    userRole={role}
+                    userSectorId={sectorId}
                 />
             )}
 
